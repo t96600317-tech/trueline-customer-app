@@ -4,15 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,35 +33,213 @@ fun ChatListScreen(
     onChatClick: (ChatConversationData) -> Unit,
     onBrowseListeners: () -> Unit = {}
 ) {
+    var searchQuery by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         onRefresh()
     }
+
+    val filteredConversations = remember(conversations, searchQuery) {
+        if (searchQuery.isBlank()) conversations
+        else conversations.filter {
+            it.partner_name.contains(searchQuery, ignoreCase = true) ||
+            it.partner_title.contains(searchQuery, ignoreCase = true) ||
+            it.last_message.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
+    val unreadCount = conversations.sumOf { it.unread_count }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(TrueLineLightBg)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        // --- HEADER SECTION ---
+        Surface(
+            color = Color.White,
+            shadowElevation = 1.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text(
-                text = "Messages",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = TrueLineDarkBg
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 14.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Messages",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TrueLineDarkBg
+                        )
+                        if (unreadCount > 0) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = TrueLineAccent,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Text(
+                                    text = "$unreadCount new",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TrueLineDarkBg,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+                    }
+
+                    // Security/Encryption Badge
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = TrueLinePrimary.copy(alpha = 0.08f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Shield,
+                                contentDescription = null,
+                                tint = TrueLinePrimary,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Encrypted",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TrueLinePrimary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search chats...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = TrueLinePrimary.copy(alpha = 0.5f),
+                        unfocusedBorderColor = Color(0xFFE2E8F0),
+                        focusedContainerColor = Color(0xFFF8FAFC),
+                        unfocusedContainerColor = Color(0xFFF8FAFC),
+                        cursorColor = TrueLinePrimary
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp)
+                )
+            }
         }
 
+        // --- ACTIVE / ONLINE LISTENERS HORIZONTAL TRAY ---
+        if (conversations.isNotEmpty()) {
+            val activeListeners = conversations.filter { it.partner_availability == "online" }
+            if (activeListeners.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp, bottom = 6.dp)
+                ) {
+                    Text(
+                        text = "ONLINE NOW",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TrueLineTextSecondary,
+                        letterSpacing = 0.8.sp,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
+                    )
+
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = PaddingValues(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        items(activeListeners) { listener ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { onChatClick(listener) }
+                                    .padding(4.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier.size(52.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = TrueLinePrimary.copy(alpha = 0.12f),
+                                        border = androidx.compose.foundation.BorderStroke(2.dp, TrueLineOnline),
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text(
+                                                text = listener.partner_name.take(1).uppercase(),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 18.sp,
+                                                color = TrueLinePrimary
+                                            )
+                                        }
+                                    }
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = TrueLineOnline,
+                                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .align(Alignment.BottomEnd)
+                                    ) {}
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = listener.partner_name.split(" ").firstOrNull() ?: listener.partner_name,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = TrueLineDarkBg,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                    thickness = 0.6.dp,
+                    color = Color(0xFFE2E8F0)
+                )
+            }
+        }
+
+        // --- MAIN CONVERSATION LIST / EMPTY STATE ---
         if (isLoading && conversations.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 TrueLineWaveformLoader(size = 40.dp)
             }
-        } else if (conversations.isEmpty()) {
+        } else if (filteredConversations.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -89,7 +268,7 @@ fun ChatListScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Text(
-                        text = "No Conversations Yet",
+                        text = if (searchQuery.isNotBlank()) "No matching conversations" else "No Conversations Yet",
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = TrueLineDarkBg
@@ -98,7 +277,10 @@ fun ChatListScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Connect with verified listeners on Discover to chat privately and anonymously.",
+                        text = if (searchQuery.isNotBlank())
+                            "Try searching for another listener name or specialty."
+                        else
+                            "Connect with verified listeners on Discover to chat privately and anonymously.",
                         fontSize = 13.5.sp,
                         color = TrueLineTextSecondary,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -126,7 +308,7 @@ fun ChatListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(conversations) { chat ->
+                items(filteredConversations) { chat ->
                     Surface(
                         onClick = { onChatClick(chat) },
                         color = Color.Transparent
@@ -192,22 +374,41 @@ fun ChatItem(chat: ChatConversationData) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = chat.partner_name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TrueLineDarkBg
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = chat.partner_name,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TrueLineDarkBg
+                    )
+                    if (chat.partner_title.isNotBlank()) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = TrueLinePrimary.copy(alpha = 0.08f)
+                        ) {
+                            Text(
+                                text = chat.partner_title,
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = TrueLinePrimary,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
                 if (chat.last_message_time.isNotBlank()) {
                     Text(
                         text = formatTimestamp(chat.last_message_time),
                         fontSize = 11.sp,
-                        color = TrueLineTextSecondary
+                        color = if (chat.unread_count > 0) TrueLinePrimary else TrueLineTextSecondary,
+                        fontWeight = if (chat.unread_count > 0) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(3.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
