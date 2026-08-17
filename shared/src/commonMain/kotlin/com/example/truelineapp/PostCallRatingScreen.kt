@@ -211,9 +211,9 @@ fun PostCallRatingScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary)
+                    colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
                 ) {
-                    Text("Submit Feedback", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Submit Feedback", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

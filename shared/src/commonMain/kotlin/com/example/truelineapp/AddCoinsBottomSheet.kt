@@ -105,14 +105,14 @@ fun AddCoinsBottomSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary),
-                shape = RoundedCornerShape(12.dp)
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent),
+                shape = RoundedCornerShape(14.dp)
             ) {
                 Text(
                     text = "Pay ₹${selectedPackage.price} for ${selectedPackage.coins} Coins",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = TrueLineDarkBg
                 )
             }
         }

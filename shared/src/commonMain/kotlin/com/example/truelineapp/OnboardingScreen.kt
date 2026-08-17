@@ -132,13 +132,13 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 Text(
                     text = if (pagerState.currentPage == items.size - 1) "Get Started" else "Next",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = TrueLineDarkBg
                 )
             }
         }

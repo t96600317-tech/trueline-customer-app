@@ -100,16 +100,16 @@ fun EditNameBottomSheet(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 if (cost == 0) {
-                    Text("Save Changes (Free)", fontWeight = FontWeight.Bold)
+                    Text("Save Changes (Free)", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Pay ", fontWeight = FontWeight.Bold)
+                        Text("Pay ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                         CoinLogo(size = 16.dp)
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("$cost & Save", fontWeight = FontWeight.Bold)
+                        Text("$cost & Save", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                     }
                 }
             }
@@ -163,13 +163,13 @@ fun PhotoConfirmationBottomSheet(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Pay ", fontWeight = FontWeight.Bold)
+                    Text("Pay ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                     CoinLogo(size = 16.dp)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("$cost & Choose Photo", fontWeight = FontWeight.Bold)
+                    Text("$cost & Choose Photo", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 }
             }
             
