@@ -1,12 +1,15 @@
 package com.example.truelineapp
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,84 +21,112 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.truelineapp.formatTimestamp
-import org.jetbrains.compose.resources.painterResource
-import truelineapp.shared.generated.resources.Res
-import truelineapp.shared.generated.resources.profile_girl
 import com.example.truelineapp.network.chat.ChatConversationData
-
-private val defaultMockConversations = listOf(
-    ChatConversationData(
-        partner_id = "1",
-        partner_name = "Afreen",
-        partner_title = "Joy Helper",
-        partner_photo_url = "",
-        partner_availability = "online",
-        last_message = "Haan bilkul! Feel free to call anytime.",
-        last_message_sender = "partner",
-        last_message_time = "2026-08-11T20:15:00Z",
-        unread_count = 1
-    ),
-    ChatConversationData(
-        partner_id = "2",
-        partner_name = "Ahmedi",
-        partner_title = "Calm Friend",
-        partner_photo_url = "",
-        partner_availability = "online",
-        last_message = "I'll be online tomorrow at 10 AM.",
-        last_message_sender = "partner",
-        last_message_time = "2026-08-11T19:15:00Z",
-        unread_count = 0
-    ),
-    ChatConversationData(
-        partner_id = "3",
-        partner_name = "Saima",
-        partner_title = "Calm Friend",
-        partner_photo_url = "",
-        partner_availability = "online",
-        last_message = "Hey! Let's talk soon.",
-        last_message_sender = "partner",
-        last_message_time = "2026-08-11T18:30:00Z",
-        unread_count = 0
-    )
-)
+import com.example.truelineapp.ui.TrueLineWaveformLoader
 
 @Composable
 fun ChatListScreen(
     conversations: List<ChatConversationData>,
     isLoading: Boolean,
     onRefresh: () -> Unit,
-    onChatClick: (ChatConversationData) -> Unit
+    onChatClick: (ChatConversationData) -> Unit,
+    onBrowseListeners: () -> Unit = {}
 ) {
     LaunchedEffect(Unit) {
         onRefresh()
     }
-    
-    val activeConversations = conversations.ifEmpty { defaultMockConversations }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(TrueLineLightBg) // Theme background
+            .background(TrueLineLightBg)
     ) {
-        Text(
-            text = "Messages",
-            modifier = Modifier.padding(16.dp),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = TrueLineDarkBg
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Messages",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = TrueLineDarkBg
+            )
+        }
 
         if (isLoading && conversations.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = TrueLinePrimary)
+                TrueLineWaveformLoader(size = 40.dp)
+            }
+        } else if (conversations.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Surface(
+                        modifier = Modifier.size(80.dp),
+                        shape = CircleShape,
+                        color = TrueLineAccent.copy(alpha = 0.15f)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.ChatBubbleOutline,
+                                contentDescription = null,
+                                tint = TrueLineDarkBg,
+                                modifier = Modifier.size(38.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Text(
+                        text = "No Conversations Yet",
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TrueLineDarkBg
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Connect with verified listeners on Discover to chat privately and anonymously.",
+                        fontSize = 13.5.sp,
+                        color = TrueLineTextSecondary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        lineHeight = 19.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Button(
+                        onClick = onBrowseListeners,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
+                    ) {
+                        Text(
+                            text = "Browse Listeners",
+                            fontWeight = FontWeight.Bold,
+                            color = TrueLineDarkBg,
+                            fontSize = 14.sp
+                        )
+                    }
+                }
             }
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                items(activeConversations) { chat ->
+                items(conversations) { chat ->
                     Surface(
                         onClick = { onChatClick(chat) },
                         color = Color.Transparent
@@ -103,9 +134,9 @@ fun ChatListScreen(
                         ChatItem(chat)
                     }
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        thickness = 0.5.dp,
-                        color = Color.LightGray.copy(alpha = 0.3f)
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        thickness = 0.6.dp,
+                        color = Color(0xFFE2E8F0)
                     )
                 }
             }
@@ -118,24 +149,41 @@ fun ChatItem(chat: ChatConversationData) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar
+        // Listener Avatar Box
         Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape),
+            modifier = Modifier.size(52.dp),
             contentAlignment = Alignment.Center
         ) {
-            ListenerAvatar(
-                name = chat.partner_name,
-                modifier = Modifier.fillMaxSize(),
-                fontSize = 24.sp
-            )
+            Surface(
+                shape = CircleShape,
+                color = TrueLinePrimary.copy(alpha = 0.12f),
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = chat.partner_name.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp,
+                        color = TrueLinePrimary
+                    )
+                }
+            }
+            if (chat.partner_availability == "online") {
+                Surface(
+                    shape = CircleShape,
+                    color = TrueLineOnline,
+                    border = androidx.compose.foundation.BorderStroke(2.dp, Color.White),
+                    modifier = Modifier
+                        .size(14.dp)
+                        .align(Alignment.BottomEnd)
+                ) {}
+            }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(14.dp))
 
         // Content
         Column(modifier = Modifier.weight(1f)) {
@@ -146,52 +194,51 @@ fun ChatItem(chat: ChatConversationData) {
             ) {
                 Text(
                     text = chat.partner_name,
-                    fontSize = 18.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TrueLineDarkBg
                 )
-                Text(
-                    text = formatTimestamp(chat.last_message_time),
-                    fontSize = 12.sp,
-                    color = Color.Gray
-                )
+                if (chat.last_message_time.isNotBlank()) {
+                    Text(
+                        text = formatTimestamp(chat.last_message_time),
+                        fontSize = 11.sp,
+                        color = TrueLineTextSecondary
+                    )
+                }
             }
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
+
+            Spacer(modifier = Modifier.height(3.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val prefix = when (chat.last_message_sender) {
-                    "user" -> "You: "
-                    "partner" -> "${chat.partner_name}: "
-                    else -> ""
-                }
                 Text(
-                    text = prefix + chat.last_message,
-                    fontSize = 14.sp,
-                    color = Color.Gray,
+                    text = if (chat.last_message.isNotBlank()) chat.last_message else "Tap to start conversation...",
+                    fontSize = 13.sp,
+                    color = if (chat.unread_count > 0) TrueLineDarkBg else TrueLineTextSecondary,
+                    fontWeight = if (chat.unread_count > 0) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f)
                 )
-                
+
                 if (chat.unread_count > 0) {
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape)
-                            .background(TrueLineOnline), // Circular green unread badge
-                        contentAlignment = Alignment.Center
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = CircleShape,
+                        color = TrueLineAccent,
+                        modifier = Modifier.size(20.dp)
                     ) {
-                        Text(
-                            text = chat.unread_count.toString(),
-                            color = Color.White,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = chat.unread_count.toString(),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TrueLineDarkBg
+                            )
+                        }
                     }
                 }
             }

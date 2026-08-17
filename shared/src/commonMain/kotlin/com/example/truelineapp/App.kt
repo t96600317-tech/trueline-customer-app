@@ -427,7 +427,7 @@ fun MainScreen(
                     // Listeners List
                     if (isDiscoverLoading) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(color = TrueLinePrimary)
+                            com.example.truelineapp.ui.TrueLineWaveformLoader(size = 44.dp)
                         }
                     } else {
                         LazyColumn(
@@ -470,7 +470,8 @@ fun MainScreen(
                         conversations = conversations,
                         isLoading = isChatListLoading,
                         onRefresh = onRefreshChatList,
-                        onChatClick = onChatClick
+                        onChatClick = onChatClick,
+                        onBrowseListeners = { selectedTab = 0 }
                     )
                 }
                 2 -> {
@@ -657,13 +658,13 @@ fun ExactReplicaCard(
                             Icon(
                                 imageVector = Icons.Default.Call,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = TrueLineDarkBg,
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "Connect",
-                                color = Color.White,
+                                color = TrueLineDarkBg,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
                             )

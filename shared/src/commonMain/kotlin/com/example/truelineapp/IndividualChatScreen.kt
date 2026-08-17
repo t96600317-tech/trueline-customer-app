@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.truelineapp.network.chat.ChatMessageData
+import com.example.truelineapp.ui.TrueLineWaveformLoader
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,7 @@ fun IndividualChatScreen(
     }
 
     Scaffold(
-        containerColor = Color(0xFFF8FAFC),
+        containerColor = TrueLineLightBg,
         topBar = {
             TopAppBar(
                 title = {
@@ -61,21 +62,21 @@ fun IndividualChatScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(TrueLinePrimary.copy(alpha = 0.15f)),
+                                .background(TrueLinePrimary.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = senderName.take(1).uppercase(),
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
-                                color = TrueLineDarkBg
+                                color = TrueLinePrimary
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
                                 text = senderName,
-                                fontSize = 17.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TrueLineDarkBg
                             )
@@ -88,8 +89,8 @@ fun IndividualChatScreen(
                                 Spacer(modifier = Modifier.width(5.dp))
                                 Text(
                                     text = if (partnerTitle.isNotBlank()) partnerTitle else "Online",
-                                    fontSize = 12.sp,
-                                    color = Color.Gray
+                                    fontSize = 11.5.sp,
+                                    color = TrueLineTextSecondary
                                 )
                             }
                         }
@@ -100,7 +101,7 @@ fun IndividualChatScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = TrueLinePrimary
+                            tint = TrueLineDarkBg
                         )
                     }
                 },
@@ -108,15 +109,15 @@ fun IndividualChatScreen(
                     IconButton(onClick = onCallClick) {
                         Surface(
                             shape = CircleShape,
-                            color = TrueLinePrimary.copy(alpha = 0.1f),
+                            color = TrueLineAccent,
                             modifier = Modifier.size(38.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Filled.Call,
                                     contentDescription = "Call",
-                                    tint = TrueLinePrimary,
-                                    modifier = Modifier.size(20.dp)
+                                    tint = TrueLineDarkBg,
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }
@@ -141,7 +142,7 @@ fun IndividualChatScreen(
                     TextField(
                         value = textState,
                         onValueChange = { textState = it },
-                        placeholder = { Text("Type a message...", color = Color.Gray, fontSize = 14.sp) },
+                        placeholder = { Text("Type a message...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 46.dp),
@@ -150,7 +151,8 @@ fun IndividualChatScreen(
                             unfocusedContainerColor = Color(0xFFF1F5F9),
                             disabledContainerColor = Color(0xFFF1F5F9),
                             focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
+                            unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = TrueLinePrimary
                         ),
                         shape = RoundedCornerShape(24.dp)
                     )
@@ -166,13 +168,13 @@ fun IndividualChatScreen(
                         },
                         modifier = Modifier.size(46.dp),
                         colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = if (textState.isNotBlank()) TrueLinePrimary else TrueLinePrimary.copy(alpha = 0.4f)
+                            containerColor = if (textState.isNotBlank()) TrueLineAccent else TrueLineAccent.copy(alpha = 0.35f)
                         )
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
-                            tint = Color.White,
+                            tint = TrueLineDarkBg,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -193,18 +195,18 @@ fun IndividualChatScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Filled.Lock, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(12.dp))
+                Icon(Icons.Filled.Lock, contentDescription = null, tint = TrueLineTextSecondary, modifier = Modifier.size(12.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    "Messages are anonymous & end-to-end encrypted",
+                    "Messages are 100% anonymous & encrypted",
                     fontSize = 11.sp,
-                    color = Color.Gray
+                    color = TrueLineTextSecondary
                 )
             }
 
             if (isLoading && messagesList.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = TrueLinePrimary, strokeWidth = 2.5.dp)
+                    TrueLineWaveformLoader(size = 38.dp)
                 }
             } else if (messagesList.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -263,7 +265,7 @@ fun IndividualChatScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = msg.created_at.takeLast(8).take(5),
+                                        text = if (msg.created_at.length >= 16) msg.created_at.substring(11, 16) else "",
                                         color = if (isFromUser) Color.White.copy(alpha = 0.7f) else Color.Gray,
                                         fontSize = 10.sp,
                                         modifier = Modifier.align(Alignment.End)

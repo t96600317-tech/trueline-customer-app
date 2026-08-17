@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.truelineapp.ui.TrueLineWaveformLoader
 
 enum class LoginStep {
     ENTER_PHONE,
@@ -94,7 +95,7 @@ fun LoginScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = TrueLinePrimary
+                            tint = TrueLineDarkBg
                         )
                     }
                 },
@@ -114,25 +115,25 @@ fun LoginScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Brand Icon
+                // Brand Icon Box
                 Surface(
-                    modifier = Modifier.size(80.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = TrueLinePrimary.copy(alpha = 0.12f)
+                    modifier = Modifier.size(76.dp),
+                    shape = RoundedCornerShape(22.dp),
+                    color = TrueLineAccent.copy(alpha = 0.18f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = if (step == LoginStep.ENTER_PHONE) Icons.Filled.Phone else Icons.Filled.Security,
                             contentDescription = null,
-                            tint = TrueLinePrimary,
-                            modifier = Modifier.size(38.dp)
+                            tint = TrueLineDarkBg,
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
                     text = if (step == LoginStep.ENTER_PHONE) "Enter your mobile number" else "Verify OTP Code",
@@ -155,12 +156,12 @@ fun LoginScreen(
                     lineHeight = 20.sp
                 )
 
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 if (step == LoginStep.ENTER_PHONE) {
                     // Mobile Number Input Box
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         color = Color.White,
                         border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFE2E8F0)),
                         shadowElevation = 1.dp,
@@ -216,7 +217,8 @@ fun LoginScreen(
                                     unfocusedContainerColor = Color.Transparent,
                                     disabledContainerColor = Color.Transparent,
                                     focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    cursorColor = TrueLinePrimary
                                 ),
                                 textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TrueLineDarkBg),
                                 modifier = Modifier.fillMaxWidth()
@@ -231,7 +233,6 @@ fun LoginScreen(
                             .clickable { otpFocusRequester.requestFocus() },
                         contentAlignment = Alignment.Center
                     ) {
-                        // Hidden basic text field capturing keystrokes
                         BasicTextField(
                             value = otpCode,
                             onValueChange = { input ->
@@ -259,7 +260,6 @@ fun LoginScreen(
                                 .size(1.dp)
                         )
 
-                        // 6 Visible Digit Boxes
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -276,7 +276,7 @@ fun LoginScreen(
                                     color = Color.White,
                                     border = androidx.compose.foundation.BorderStroke(
                                         width = if (isFocused) 2.dp else 1.dp,
-                                        color = if (isFocused) TrueLinePrimary else if (char.isNotEmpty()) TrueLinePrimary.copy(alpha = 0.5f) else Color(0xFFE2E8F0)
+                                        color = if (isFocused) TrueLineAccent else if (char.isNotEmpty()) TrueLineAccent.copy(alpha = 0.7f) else Color(0xFFE2E8F0)
                                     ),
                                     shadowElevation = if (isFocused) 3.dp else 0.dp
                                 ) {
@@ -295,7 +295,6 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Resend Timer Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -321,7 +320,7 @@ fun LoginScreen(
                 }
             }
 
-            // Bottom CTA Button
+            // Bottom CTA Button (Yellow Accent Color!)
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -350,24 +349,24 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = TrueLinePrimary,
-                        disabledContainerColor = TrueLinePrimary.copy(alpha = 0.4f)
+                        containerColor = TrueLineAccent,
+                        disabledContainerColor = TrueLineAccent.copy(alpha = 0.4f)
                     )
                 ) {
                     if (isLoading) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier.size(24.dp),
-                            strokeWidth = 2.5.dp
+                        TrueLineWaveformLoader(
+                            size = 24.dp,
+                            barColor = TrueLineDarkBg,
+                            accentColor = TrueLinePrimary
                         )
                     } else {
                         Text(
                             text = if (step == LoginStep.ENTER_PHONE) "Get OTP" else "Verify & Continue",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = TrueLineDarkBg
                         )
                     }
                 }

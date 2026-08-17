@@ -112,16 +112,20 @@ fun WalletScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(54.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = TrueLinePrimary,
-                            disabledContainerColor = TrueLinePrimary.copy(alpha = 0.5f)
+                            containerColor = TrueLineAccent,
+                            disabledContainerColor = TrueLineAccent.copy(alpha = 0.4f)
                         )
                     ) {
                         if (isProcessing) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.5.dp)
+                            com.example.truelineapp.ui.TrueLineWaveformLoader(
+                                size = 24.dp,
+                                barColor = TrueLineDarkBg,
+                                accentColor = TrueLinePrimary
+                            )
                         } else {
-                            Text("Recharge $selectedPrice", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text("Recharge $selectedPrice", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                         }
                     }
                 }
@@ -287,7 +291,7 @@ fun WalletScreen(
                 // Transaction History List
                 if (isTransactionsLoading) {
                     Box(modifier = Modifier.fillMaxWidth().height(150.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = TrueLinePrimary, strokeWidth = 2.5.dp)
+                        com.example.truelineapp.ui.TrueLineWaveformLoader(size = 38.dp)
                     }
                 } else if (transactions.isEmpty()) {
                     Box(
