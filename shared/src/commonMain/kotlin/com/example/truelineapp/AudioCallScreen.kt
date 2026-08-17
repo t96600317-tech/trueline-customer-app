@@ -4,10 +4,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CallEnd
+import androidx.compose.material.icons.filled.CardGiftcard
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,13 +56,11 @@ fun AudioCallScreen(listenerName: String, onHangUp: () -> Unit) {
                 modifier = Modifier
                     .size(140.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.1f))
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.profile_girl),
-                    contentDescription = null,
+                ListenerAvatar(
+                    name = listenerName,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    fontSize = 56.sp
                 )
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -77,6 +79,22 @@ fun AudioCallScreen(listenerName: String, onHangUp: () -> Unit) {
             )
         }
 
+        // Middle Section (Floating Gift Button)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Button(
+                onClick = { /* TODO: Trigger gifting flow */ },
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent), // STRICT: Amber for Gift CTA
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier.padding(bottom = 32.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Send Gift", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+        }
+
         // Bottom Controls
         Row(
             modifier = Modifier
@@ -85,7 +103,14 @@ fun AudioCallScreen(listenerName: String, onHangUp: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CallControlButton(icon = Icons.Default.Mic, tint = Color.White)
+            var isMuted by remember { mutableStateOf(false) }
+            var isSpeakerOn by remember { mutableStateOf(true) }
+
+            CallControlButton(
+                icon = if (isMuted) Icons.Default.MicOff else Icons.Default.Mic, 
+                tint = if (isMuted) TrueLineAccent else Color.White,
+                onClick = { isMuted = !isMuted }
+            )
             
             IconButton(
                 onClick = onHangUp,
@@ -102,17 +127,26 @@ fun AudioCallScreen(listenerName: String, onHangUp: () -> Unit) {
                 )
             }
 
-            CallControlButton(icon = Icons.Default.VolumeUp, tint = Color.White)
+            CallControlButton(
+                icon = if (isSpeakerOn) Icons.Default.VolumeUp else Icons.Default.VolumeOff, 
+                tint = if (!isSpeakerOn) TrueLineAccent else Color.White,
+                onClick = { isSpeakerOn = !isSpeakerOn }
+            )
         }
     }
 }
 
 @Composable
-fun CallControlButton(icon: androidx.compose.ui.graphics.vector.ImageVector, tint: Color) {
+fun CallControlButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector, 
+    tint: Color,
+    onClick: () -> Unit = {}
+) {
     Surface(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
-        color = Color.White.copy(alpha = 0.1f)
+        color = Color.White.copy(alpha = 0.1f),
+        onClick = onClick
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))

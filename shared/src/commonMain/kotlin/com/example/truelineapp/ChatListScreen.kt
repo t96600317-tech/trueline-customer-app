@@ -24,6 +24,42 @@ import truelineapp.shared.generated.resources.Res
 import truelineapp.shared.generated.resources.profile_girl
 import com.example.truelineapp.network.chat.ChatConversationData
 
+private val defaultMockConversations = listOf(
+    ChatConversationData(
+        partner_id = "1",
+        partner_name = "Afreen",
+        partner_title = "Joy Helper",
+        partner_photo_url = "",
+        partner_availability = "online",
+        last_message = "Haan bilkul! Feel free to call anytime.",
+        last_message_sender = "partner",
+        last_message_time = "2026-08-11T20:15:00Z",
+        unread_count = 1
+    ),
+    ChatConversationData(
+        partner_id = "2",
+        partner_name = "Ahmedi",
+        partner_title = "Calm Friend",
+        partner_photo_url = "",
+        partner_availability = "online",
+        last_message = "I'll be online tomorrow at 10 AM.",
+        last_message_sender = "partner",
+        last_message_time = "2026-08-11T19:15:00Z",
+        unread_count = 0
+    ),
+    ChatConversationData(
+        partner_id = "3",
+        partner_name = "Saima",
+        partner_title = "Calm Friend",
+        partner_photo_url = "",
+        partner_availability = "online",
+        last_message = "Hey! Let's talk soon.",
+        last_message_sender = "partner",
+        last_message_time = "2026-08-11T18:30:00Z",
+        unread_count = 0
+    )
+)
+
 @Composable
 fun ChatListScreen(
     conversations: List<ChatConversationData>,
@@ -35,6 +71,8 @@ fun ChatListScreen(
         onRefresh()
     }
     
+    val activeConversations = conversations.ifEmpty { defaultMockConversations }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -48,7 +86,7 @@ fun ChatListScreen(
             color = TrueLineDarkBg
         )
 
-        if (isLoading) {
+        if (isLoading && conversations.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = TrueLinePrimary)
             }
@@ -57,7 +95,7 @@ fun ChatListScreen(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 16.dp)
             ) {
-                items(conversations) { chat ->
+                items(activeConversations) { chat ->
                     Surface(
                         onClick = { onChatClick(chat) },
                         color = Color.Transparent
@@ -87,15 +125,13 @@ fun ChatItem(chat: ChatConversationData) {
         Box(
             modifier = Modifier
                 .size(56.dp)
-                .clip(CircleShape)
-                .background(TrueLineLightBg),
+                .clip(CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Image(
-                painter = painterResource(Res.drawable.profile_girl),
-                contentDescription = null,
+            ListenerAvatar(
+                name = chat.partner_name,
                 modifier = Modifier.fillMaxSize(),
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                fontSize = 24.sp
             )
         }
 

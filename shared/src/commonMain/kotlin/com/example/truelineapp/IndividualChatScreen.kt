@@ -42,6 +42,7 @@ data class Message(
 fun IndividualChatScreen(
     partnerId: String, 
     senderName: String, 
+    partnerTitle: String = "",
     partnerPhotoUrl: String = "",
     messagesList: List<ChatMessageData> = emptyList(),
     isLoading: Boolean = false,
@@ -79,13 +80,11 @@ fun IndividualChatScreen(
                             modifier = Modifier
                                 .size(40.dp)
                                 .clip(CircleShape)
-                                .background(TrueLineLightBg)
                         ) {
-                            Image(
-                                painter = painterResource(Res.drawable.profile_girl),
-                                contentDescription = null,
+                            ListenerAvatar(
+                                name = senderName,
                                 modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
+                                fontSize = 18.sp
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -96,7 +95,16 @@ fun IndividualChatScreen(
                                 fontWeight = FontWeight.Bold,
                                 color = TrueLineDarkBg
                             )
-                            Text("Online", fontSize = 12.sp, color = TrueLineOnline)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (partnerTitle.isNotBlank()) {
+                                    Text(
+                                        text = "$partnerTitle • ", 
+                                        fontSize = 12.sp, 
+                                        color = Color.Gray
+                                    )
+                                }
+                                Text("Online", fontSize = 12.sp, color = TrueLineOnline)
+                            }
                         }
                     }
                 },

@@ -48,6 +48,7 @@ kotlin {
             implementation(libs.okhttp.core)
             implementation(libs.okhttp.logging.interceptor)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.androidx.activity.compose)
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)

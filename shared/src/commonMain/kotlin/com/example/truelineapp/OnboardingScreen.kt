@@ -19,11 +19,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Headset
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.VerifiedUser
+
 data class OnboardingItem(
     val title: String,
     val subtitle: String,
     val description: String,
-    val icon: String,
     val accentColor: Color
 )
 
@@ -35,28 +43,24 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
             title = "Someone who actually listens.",
             subtitle = "Koi jo aapki baat sune.",
             description = "TrueLine connects you with real people who are here to listen, not just hear. Voice-first calling for India.",
-            icon = "🎧",
             accentColor = TrueLinePrimary
         ),
         OnboardingItem(
             title = "100% ID-Verified.",
             subtitle = "Sahi log, sahi baat.",
             description = "Every listener completes government ID and face verification. No bots, no fake profiles, just real humans.",
-            icon = "✅",
             accentColor = TrueLineOnline
         ),
         OnboardingItem(
             title = "Transparent & Private.",
             subtitle = "Poori tarah private.",
             description = "No photos are ever shown. See the exact cost (₹3.43/min) before every call. Your identity stays safe.",
-            icon = "🛡️",
             accentColor = TrueLineAccent
         ),
         OnboardingItem(
             title = "Ready to talk?",
             subtitle = "Shuru karein?",
             description = "To start calling, we'll need microphone access. Your calls are always 1-on-1 and secure.",
-            icon = "🎙️",
             accentColor = TrueLinePrimary
         )
     )
@@ -68,7 +72,7 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
             state = pagerState,
             modifier = Modifier.fillMaxSize()
         ) { page ->
-            OnboardingPage(items[page])
+            OnboardingPage(items[page], pageIndex = page)
         }
 
         if (pagerState.currentPage < items.size - 1) {
@@ -130,7 +134,123 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
 }
 
 @Composable
-fun OnboardingPage(item: OnboardingItem) {
+fun PeopleTalkingOnPhoneIllustration() {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp)
+    ) {
+        // Man Profile Icon
+        Surface(
+            shape = CircleShape,
+            color = Color.White.copy(alpha = 0.2f),
+            modifier = Modifier.size(34.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Man",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Phone Connection Icon
+        Icon(
+            imageVector = Icons.Default.Call,
+            contentDescription = "Phone Call",
+            tint = TrueLineAccent,
+            modifier = Modifier.size(22.dp)
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        // Woman Profile Icon
+        Surface(
+            shape = CircleShape,
+            color = Color.White.copy(alpha = 0.2f),
+            modifier = Modifier.size(34.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Default.Face,
+                    contentDescription = "Woman",
+                    tint = Color.White,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun OnboardingIllustration(pageIndex: Int, accentColor: Color) {
+    if (pageIndex == 3) {
+        // Original concentric rings with mic emoji as it was originally
+        Box(
+            modifier = Modifier
+                .size(160.dp)
+                .clip(CircleShape)
+                .background(accentColor.copy(alpha = 0.1f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(modifier = Modifier.size(140.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.05f)))
+            Box(modifier = Modifier.size(120.dp).clip(CircleShape).background(accentColor.copy(alpha = 0.05f)))
+            
+            Text(
+                text = "🎙️",
+                fontSize = 60.sp
+            )
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .size(160.dp)
+                .clip(CircleShape)
+                .background(accentColor.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(136.dp)
+                    .clip(CircleShape)
+                    .background(accentColor.copy(alpha = 0.08f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier.size(104.dp),
+                    shape = CircleShape,
+                    color = accentColor,
+                    shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        when (pageIndex) {
+                            0 -> PeopleTalkingOnPhoneIllustration()
+                            1 -> Icon(
+                                imageVector = Icons.Default.VerifiedUser,
+                                contentDescription = "Verified ID",
+                                tint = Color.White,
+                                modifier = Modifier.size(52.dp)
+                            )
+                            else -> Icon(
+                                imageVector = Icons.Default.Shield,
+                                contentDescription = "Privacy Shield",
+                                tint = Color.White,
+                                modifier = Modifier.size(52.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OnboardingPage(item: OnboardingItem, pageIndex: Int) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -145,21 +265,7 @@ fun OnboardingPage(item: OnboardingItem) {
             
             Spacer(modifier = Modifier.height(40.dp))
             
-            Box(
-                modifier = Modifier
-                    .size(160.dp)
-                    .clip(CircleShape)
-                    .background(item.accentColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Box(modifier = Modifier.size(140.dp).clip(CircleShape).background(item.accentColor.copy(alpha = 0.05f)))
-                Box(modifier = Modifier.size(120.dp).clip(CircleShape).background(item.accentColor.copy(alpha = 0.05f)))
-                
-                Text(
-                    text = item.icon,
-                    fontSize = 60.sp
-                )
-            }
+            OnboardingIllustration(pageIndex = pageIndex, accentColor = item.accentColor)
         }
 
         Spacer(modifier = Modifier.height(64.dp))

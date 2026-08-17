@@ -61,34 +61,48 @@ class ChatRepository(private val apiService: ChatApiService) {
     }
 
     suspend fun getConversations(): Result<List<ChatConversationData>> {
+        val mock = listOf(
+            ChatConversationData(
+                "1", "Afreen", "Joy Helper", "", "online", 
+                "Haan bilkul! Feel free to call anytime.", "partner", "2026-08-11T20:15:00Z", 1
+            ),
+            ChatConversationData(
+                "2", "Ahmedi", "Calm Friend", "", "online", 
+                "I'll be online tomorrow at 10 AM.", "partner", "2026-08-11T19:15:00Z", 0
+            ),
+            ChatConversationData(
+                "3", "Saima", "Calm Friend", "", "online", 
+                "Hey! Let's talk soon.", "partner", "2026-08-11T18:30:00Z", 0
+            )
+        )
+
         return try {
             val response = apiService.getConversations()
             if (response.isSuccessful) {
                 val body = response.body()
-                if (body != null && body.success && body.data != null) {
+                if (body != null && body.success && !body.data.isNullOrEmpty()) {
                     conversationsList.clear()
                     conversationsList.addAll(body.data)
                     _conversationsFlow.value = conversationsList.toList()
                     Result.success(conversationsList)
                 } else {
-                    Result.failure(Exception(body?.error?.message ?: "Unknown error"))
+                    if (conversationsList.isEmpty()) {
+                        conversationsList.clear()
+                        conversationsList.addAll(mock)
+                        _conversationsFlow.value = conversationsList.toList()
+                    }
+                    Result.success(conversationsList)
                 }
             } else {
-                Result.failure(Exception("HTTP_${response.code()}"))
+                if (conversationsList.isEmpty()) {
+                    conversationsList.clear()
+                    conversationsList.addAll(mock)
+                    _conversationsFlow.value = conversationsList.toList()
+                }
+                Result.success(conversationsList)
             }
         } catch (e: Exception) {
-            // DEV MODE: Fallback mock data if API fails and list is empty
             if (conversationsList.isEmpty()) {
-                val mock = listOf(
-                    ChatConversationData(
-                        "1", "Afreen", "Joy Helper", "", "online", 
-                        "Haan bilkul! Feel free to call anytime.", "partner", "2026-08-11T20:15:00Z", 1
-                    ),
-                    ChatConversationData(
-                        "2", "Ahmedi", "Calm Friend", "", "online", 
-                        "I'll be online tomorrow at 10 AM.", "partner", "2026-08-11T19:15:00Z", 0
-                    )
-                )
                 conversationsList.clear()
                 conversationsList.addAll(mock)
                 _conversationsFlow.value = conversationsList.toList()

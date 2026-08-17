@@ -37,6 +37,7 @@ fun UserProfileScreen(
     val scrollState = rememberScrollState()
     var showNameEdit by remember { mutableStateOf(false) }
     var showPhotoConfirm by remember { mutableStateOf(false) }
+    var showPhotoSourcePicker by remember { mutableStateOf(false) }
 
     if (showNameEdit) {
         EditNameBottomSheet(
@@ -65,8 +66,33 @@ fun UserProfileScreen(
             },
             onConfirm = { cost ->
                 showPhotoConfirm = false
-                println("Photo change confirmed. Deducting $cost coins.")
-                onUpdateProfile(userName, cost)
+                showPhotoSourcePicker = true
+            }
+        )
+    }
+
+    val launchGallery = rememberGalleryLauncher { uri ->
+        if (uri != null) {
+            onUpdateProfile(userName, 59)
+        }
+    }
+
+    val launchCamera = rememberCameraLauncher { success ->
+        if (success) {
+            onUpdateProfile(userName, 59)
+        }
+    }
+
+    if (showPhotoSourcePicker) {
+        PhotoSourcePickerBottomSheet(
+            onDismiss = { showPhotoSourcePicker = false },
+            onChooseFromGallery = {
+                showPhotoSourcePicker = false
+                launchGallery()
+            },
+            onTakeSelfie = {
+                showPhotoSourcePicker = false
+                launchCamera()
             }
         )
     }

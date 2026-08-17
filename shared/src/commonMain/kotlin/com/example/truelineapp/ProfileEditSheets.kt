@@ -2,9 +2,13 @@ package com.example.truelineapp
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -175,3 +179,115 @@ fun PhotoConfirmationBottomSheet(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoSourcePickerBottomSheet(
+    onDismiss: () -> Unit,
+    onChooseFromGallery: () -> Unit,
+    onTakeSelfie: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Select Photo Source", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                "Choose how you want to update your profile picture.",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Option 1: Choose Photo from Gallery
+            Surface(
+                onClick = onChooseFromGallery,
+                shape = RoundedCornerShape(16.dp),
+                color = TrueLineLightBg,
+                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = TrueLinePrimary.copy(alpha = 0.1f),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, tint = TrueLinePrimary)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Choose Photo from Gallery", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
+                        Text("Select an existing photo from library", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Option 2: Take a Selfie
+            Surface(
+                onClick = onTakeSelfie,
+                shape = RoundedCornerShape(16.dp),
+                color = TrueLineLightBg,
+                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = TrueLineAccent.copy(alpha = 0.15f),
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null, tint = TrueLineAccent)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Take a Selfie", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
+                        Text("Capture a new selfie using camera", fontSize = 12.sp, color = Color.Gray)
+                    }
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Gray)
+            }
+        }
+    }
+}
+

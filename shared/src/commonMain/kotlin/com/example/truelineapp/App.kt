@@ -137,7 +137,9 @@ fun App(
                         conversations = conversations,
                         isChatListLoading = isChatListLoading,
                         onChatClick = { partner ->
-                            navController.navigate("chat_detail/${partner.partner_id}/${partner.partner_name}")
+                            val photoUrlEncoded = partner.partner_photo_url.ifBlank { "none" }
+                            val titleEncoded = partner.partner_title.ifBlank { "none" }
+                            navController.navigate("chat_detail/${partner.partner_id}/${partner.partner_name}/$titleEncoded/$photoUrlEncoded")
                         },
                         onNavigateToWallet = {
                             navController.navigate("wallet")
@@ -158,7 +160,10 @@ fun App(
                         onDiscoverLanguageSelected = onDiscoverLanguageSelected,
                         playingAudioUrl = playingAudioUrl,
                         onRefreshChatList = onRefreshChatList,
-                        onPlayAudio = onPlayAudio
+                        onPlayAudio = onPlayAudio,
+                        onCallClick = { partner ->
+                            navController.navigate("audio_call/${partner.name}")
+                        }
                     )
                 }
                 composable("wallet") {
@@ -172,17 +177,35 @@ fun App(
                     )
                 }
                 composable(
-                    route = "chat_detail/{id}/{name}",
+                    route = "audio_call/{name}",
+                    arguments = listOf(navArgument("name") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    AudioCallScreen(
+                        listenerName = name,
+                        onHangUp = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+                composable(
+                    route = "chat_detail/{id}/{name}/{title}/{photoUrl}",
                     arguments = listOf(
                         navArgument("id") { type = NavType.StringType },
-                        navArgument("name") { type = NavType.StringType }
+                        navArgument("name") { type = NavType.StringType },
+                        navArgument("title") { type = NavType.StringType },
+                        navArgument("photoUrl") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString("id") ?: ""
                     val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val title = backStackEntry.arguments?.getString("title") ?: ""
+                    val photoUrl = backStackEntry.arguments?.getString("photoUrl") ?: ""
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
+                        partnerTitle = title,
+                        partnerPhotoUrl = photoUrl,
                         messagesList = chatMessages,
                         isLoading = isChatMessagesLoading,
                         onLoadMessages = { onLoadMessages(id) },
@@ -224,7 +247,8 @@ fun MainScreen(
     onSearchChanged: (String) -> Unit,
     onDiscoverLanguageSelected: (String) -> Unit,
     onRefreshChatList: () -> Unit,
-    onPlayAudio: (url: String) -> Unit
+    onPlayAudio: (url: String) -> Unit,
+    onCallClick: (PartnerData) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf(searchQueryInitial) }
     val languages = listOf("All", "Hindi", "Bhojpuri", "Bengali", "Tamil", "Telugu", "Marathi", "Punjabi")
@@ -426,7 +450,7 @@ fun MainScreen(
                                     onPlayClick = { onPlayAudio(partner.audio_sample_url) },
                                     onConnectClick = {
                                         if (walletBalance >= partner.rate_per_min) {
-                                            println("Connecting with ${partner.name}...") 
+                                            onCallClick(partner)
                                         } else {
                                             pendingListenerName = partner.name
                                             showAddCoinsSheet = true
@@ -499,33 +523,21 @@ fun ExactReplicaCard(
                     border = BorderStroke(2.dp, Color.White),
                     shadowElevation = 4.dp
                 ) {
-                    if (partner.photo_url.isNotBlank()) {
-                        // In a real app, use an image loading library like Coil
-                        // For now, we'll keep our local placeholder or use a network painter if available
-                        Image(
-                            painter = painterResource(Res.drawable.profile_girl),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(Res.drawable.profile_girl),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                    ListenerAvatar(
+                        name = partner.name,
+                        modifier = Modifier.fillMaxSize(),
+                        fontSize = 42.sp
+                    )
                 }
 
-                // ONLINE Badge (Top Position)
+                // ONLINE Badge (Top Right Position)
                 if (partner.availability == "online") {
                     Surface(
                         color = TrueLineOnline,
                         shape = RoundedCornerShape(4.dp),
                         modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .offset(y = (-4).dp)
+                            .align(Alignment.TopEnd)
+                            .offset(x = (-2).dp, y = 2.dp)
                     ) {
                         Text(
                             "ONLINE",
@@ -551,7 +563,12 @@ fun ExactReplicaCard(
                     ) {
                         Icon(Icons.Default.Star, null, tint = TrueLineAccent, modifier = Modifier.size(10.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(partner.rating_avg.toString(), color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "${partner.rating_avg} (${partner.rating_count})", 
+                            color = Color.White, 
+                            fontSize = 10.sp, 
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

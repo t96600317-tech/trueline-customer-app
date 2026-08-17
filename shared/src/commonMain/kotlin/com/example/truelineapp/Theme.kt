@@ -8,7 +8,7 @@ import androidx.compose.ui.graphics.Color
 /**
  * Official TrueLine Brand Color Palette (HEX Codes)
  */
-val TrueLinePrimary = Color(0xFF2D6A68)   // Teal: App Bars, Primary Buttons, Headers
+val TrueLinePrimary = Color(0xFF2D6A6B)   // Teal: App Bars, Primary Buttons, Headers, Listener Avatars
 val TrueLineSecondary = Color(0xFF5FA8D3) // Sky: Sub-texts, secondary icons, dark-mode accents
 val TrueLineAccent = Color(0xFFF2A65A)    // Amber: Call-to-action triggers ONLY (Connect, Rate, Gift)
 val TrueLineDarkBg = Color(0xFF0F1B22)    // Dark Background: In-Call screens & Dark Theme
