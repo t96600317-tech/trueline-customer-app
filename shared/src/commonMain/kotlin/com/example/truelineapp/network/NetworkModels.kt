@@ -22,6 +22,14 @@ data class OtpRequest(
 )
 
 @Serializable
+data class OtpResponse(
+    val message: String = "",
+    val phone: String = "",
+    val expires_in_seconds: Int = 300,
+    val mock_otp: String? = null
+)
+
+@Serializable
 data class OtpVerifyRequest(
     val phone: String,
     val otp: String,

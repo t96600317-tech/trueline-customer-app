@@ -102,7 +102,7 @@ class CustomerRepository(
     }
 
     // --- Auth API ---
-    suspend fun requestOtp(phone: String): ApiResponse<Map<String, String>> {
+    suspend fun requestOtp(phone: String): ApiResponse<OtpResponse> {
         return try {
             executeWithFallback { host ->
                 client.post("http://$host/api/v1/auth/otp/request") {
