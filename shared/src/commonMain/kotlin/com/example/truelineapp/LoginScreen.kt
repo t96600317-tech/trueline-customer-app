@@ -1,25 +1,35 @@
 package com.example.truelineapp
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 enum class LoginStep {
     ENTER_PHONE,
@@ -32,15 +42,20 @@ fun LoginScreen(
     isLoading: Boolean = false,
     isSuccess: Boolean = false,
     errorMessage: String? = null,
-    onSendOtp: (String) -> Unit,
-    onVerifyOtp: (String, String) -> Unit,
-    onLoginSuccess: () -> Unit, 
+    otpCountdown: Int = 30,
+    canResendOtp: Boolean = false,
+    onSendOtp: (phone: String, onSuccess: () -> Unit) -> Unit,
+    onVerifyOtp: (phone: String, otp: String) -> Unit,
+    onResendOtp: () -> Unit = {},
+    onLoginSuccess: () -> Unit,
     onBack: () -> Unit
 ) {
     var step by remember { mutableStateOf(LoginStep.ENTER_PHONE) }
     var phoneNumber by remember { mutableStateOf("") }
     var otpCode by remember { mutableStateOf("") }
-    
+    val focusManager = LocalFocusManager.current
+    val otpFocusRequester = remember { FocusRequester() }
+
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(errorMessage) {
@@ -55,8 +70,14 @@ fun LoginScreen(
         }
     }
 
+    LaunchedEffect(step) {
+        if (step == LoginStep.ENTER_OTP) {
+            otpFocusRequester.requestFocus()
+        }
+    }
+
     Scaffold(
-        containerColor = TrueLineLightBg, // Brand Light Bg
+        containerColor = TrueLineLightBg,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -65,6 +86,7 @@ fun LoginScreen(
                     IconButton(onClick = {
                         if (step == LoginStep.ENTER_OTP) {
                             step = LoginStep.ENTER_PHONE
+                            otpCode = ""
                         } else {
                             onBack()
                         }
@@ -85,208 +107,281 @@ fun LoginScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
-
-            // Brand Logo or Icon
-            Box(
-                modifier = Modifier
-                    .size(88.dp)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFFEBF2F3)), // Soft light gray/teal
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (step == LoginStep.ENTER_PHONE) "📱" else "📩", fontSize = 44.sp)
-            }
+                Spacer(modifier = Modifier.height(20.dp))
 
-            Spacer(modifier = Modifier.height(32.dp))
+                // Brand Icon
+                Surface(
+                    modifier = Modifier.size(80.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    color = TrueLinePrimary.copy(alpha = 0.12f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = if (step == LoginStep.ENTER_PHONE) Icons.Filled.Phone else Icons.Filled.Security,
+                            contentDescription = null,
+                            tint = TrueLinePrimary,
+                            modifier = Modifier.size(38.dp)
+                        )
+                    }
+                }
 
-            Text(
-                text = if (step == LoginStep.ENTER_PHONE) "Verify your number" else "Verify OTP",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = TrueLineDarkBg, // Deep dark teal
-                textAlign = TextAlign.Center
-            )
+                Spacer(modifier = Modifier.height(28.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = if (step == LoginStep.ENTER_PHONE) 
-                    "We'll send a 6-digit OTP to verify your account." 
-                    else "OTP sent to +91 $phoneNumber",
-                fontSize = 16.sp,
-                color = TrueLinePrimary.copy(alpha = 0.8f), // Deep dark teal subtext
-                textAlign = TextAlign.Center,
-                lineHeight = 22.sp
-            )
-
-            Spacer(modifier = Modifier.height(48.dp))
-
-            if (step == LoginStep.ENTER_PHONE) {
-                PhoneInputField(
-                    value = phoneNumber,
-                    onValueChange = { if (it.length <= 10) phoneNumber = it }
+                Text(
+                    text = if (step == LoginStep.ENTER_PHONE) "Enter your mobile number" else "Verify OTP Code",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TrueLineDarkBg,
+                    textAlign = TextAlign.Center
                 )
-            } else {
-                OTPInputField(
-                    value = otpCode,
-                    onValueChange = { if (it.length <= 6) otpCode = it }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = if (step == LoginStep.ENTER_PHONE)
+                        "We will send a 6-digit verification code to connect safely."
+                    else
+                        "Enter the 6-digit OTP code sent to +91 $phoneNumber",
+                    fontSize = 14.sp,
+                    color = TrueLineTextSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
                 )
-            }
 
-            Spacer(modifier = Modifier.height(40.dp))
+                Spacer(modifier = Modifier.height(36.dp))
 
-            Button(
-                onClick = {
-                    if (step == LoginStep.ENTER_PHONE) {
-                        if (phoneNumber.length < 10) {
-                            // Local validation before API call
-                        } else {
-                            onSendOtp("+91$phoneNumber")
-                            step = LoginStep.ENTER_OTP
-                        }
-                    } else {
-                        if (otpCode.length == 6) {
-                            onVerifyOtp("+91$phoneNumber", otpCode)
+                if (step == LoginStep.ENTER_PHONE) {
+                    // Mobile Number Input Box
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFE2E8F0)),
+                        shadowElevation = 1.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Country Code Pill
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = TrueLinePrimary.copy(alpha = 0.08f)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("🇮🇳", fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("+91", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TrueLineDarkBg)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            TextField(
+                                value = phoneNumber,
+                                onValueChange = { input ->
+                                    val digitsOnly = input.filter { it.isDigit() }
+                                    if (digitsOnly.length <= 10) phoneNumber = digitsOnly
+                                },
+                                placeholder = { Text("98765 43210", color = Color(0xFFA0AEC0)) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Phone,
+                                    imeAction = ImeAction.Done
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        focusManager.clearFocus()
+                                        if (phoneNumber.length == 10) {
+                                            onSendOtp("+91$phoneNumber") {
+                                                step = LoginStep.ENTER_OTP
+                                            }
+                                        }
+                                    }
+                                ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent
+                                ),
+                                textStyle = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TrueLineDarkBg),
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
-                },
+                } else {
+                    // Segmented 6-Box OTP Display
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { otpFocusRequester.requestFocus() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        // Hidden basic text field capturing keystrokes
+                        BasicTextField(
+                            value = otpCode,
+                            onValueChange = { input ->
+                                val digits = input.filter { it.isDigit() }.take(6)
+                                otpCode = digits
+                                if (digits.length == 6) {
+                                    focusManager.clearFocus()
+                                    onVerifyOtp("+91$phoneNumber", digits)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.NumberPassword,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    focusManager.clearFocus()
+                                    if (otpCode.length == 6) {
+                                        onVerifyOtp("+91$phoneNumber", otpCode)
+                                    }
+                                }
+                            ),
+                            modifier = Modifier
+                                .focusRequester(otpFocusRequester)
+                                .size(1.dp)
+                        )
+
+                        // 6 Visible Digit Boxes
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            for (i in 0 until 6) {
+                                val char = otpCode.getOrNull(i)?.toString() ?: ""
+                                val isFocused = otpCode.length == i
+
+                                Surface(
+                                    modifier = Modifier
+                                        .width(48.dp)
+                                        .height(56.dp),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color.White,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        width = if (isFocused) 2.dp else 1.dp,
+                                        color = if (isFocused) TrueLinePrimary else if (char.isNotEmpty()) TrueLinePrimary.copy(alpha = 0.5f) else Color(0xFFE2E8F0)
+                                    ),
+                                    shadowElevation = if (isFocused) 3.dp else 0.dp
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = char,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TrueLineDarkBg
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Resend Timer Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (!canResendOtp) {
+                            Text(
+                                text = "Resend OTP in ${otpCountdown}s",
+                                fontSize = 14.sp,
+                                color = TrueLineTextSecondary
+                            )
+                        } else {
+                            TextButton(onClick = onResendOtp) {
+                                Text(
+                                    text = "Resend OTP",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TrueLinePrimary
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Bottom CTA Button
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = TrueLineAccent,
-                    disabledContainerColor = TrueLineAccent
-                ),
-                enabled = !isLoading
+                    .padding(bottom = 28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (isLoading) {
-                    WaveformLoadingIndicator(
-                        maxBarHeight = 32.dp,
-                        barWidth = 5.dp,
-                        gap = 4.dp
+                Button(
+                    onClick = {
+                        focusManager.clearFocus()
+                        if (step == LoginStep.ENTER_PHONE) {
+                            if (phoneNumber.length == 10) {
+                                onSendOtp("+91$phoneNumber") {
+                                    step = LoginStep.ENTER_OTP
+                                }
+                            }
+                        } else {
+                            if (otpCode.length == 6) {
+                                onVerifyOtp("+91$phoneNumber", otpCode)
+                            }
+                        }
+                    },
+                    enabled = !isLoading && (
+                        (step == LoginStep.ENTER_PHONE && phoneNumber.length == 10) ||
+                        (step == LoginStep.ENTER_OTP && otpCode.length == 6)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = TrueLinePrimary,
+                        disabledContainerColor = TrueLinePrimary.copy(alpha = 0.4f)
                     )
-                } else {
-                    Text(
-                        text = if (step == LoginStep.ENTER_PHONE) "Send OTP" else "Verify & Continue",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TrueLineDarkBg 
-                    )
-                }
-            }
-
-            if (step == LoginStep.ENTER_OTP) {
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                TextButton(
-                    onClick = { onSendOtp("+91$phoneNumber") },
-                    enabled = !isLoading
                 ) {
-                    Text(
-                        "Resend OTP", 
-                        color = TrueLinePrimary, 
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Text(
+                            text = if (step == LoginStep.ENTER_PHONE) "Get OTP" else "Verify & Continue",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "By continuing, you agree to TrueLine's Terms of Service & Privacy Policy",
+                    fontSize = 11.sp,
+                    color = TrueLineTextSecondary.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center,
+                    lineHeight = 16.sp
+                )
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Text(
-                "By continuing, you agree to our Terms & Privacy Policy",
-                fontSize = 12.sp,
-                color = Color.Gray.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
         }
     }
-}
-
-@Composable
-fun PhoneInputField(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp), // Updated to 12dp
-        leadingIcon = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(start = 16.dp, end = 8.dp)
-            ) {
-                Text(
-                    "🇮🇳", 
-                    fontSize = 20.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    "+91", 
-                    fontWeight = FontWeight.Bold, 
-                    color = TrueLineDarkBg,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.LightGray))
-            }
-        },
-        placeholder = { Text("Mobile Number", color = Color.Gray.copy(alpha = 0.5f)) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-        singleLine = true,
-        textStyle = LocalTextStyle.current.copy(
-            fontSize = 18.sp, 
-            fontWeight = FontWeight.Bold,
-            color = TrueLineDarkBg
-        ),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = TrueLinePrimary,
-            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.3f), // Subtle border
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            cursorColor = TrueLinePrimary,
-            focusedTextColor = TrueLineDarkBg,
-            unfocusedTextColor = TrueLineDarkBg
-        )
-    )
-}
-
-@Composable
-fun OTPInputField(value: String, onValueChange: (String) -> Unit) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp), // Updated to 12dp
-        placeholder = { 
-            Text(
-                "Enter 6-digit OTP", 
-                textAlign = TextAlign.Center, 
-                modifier = Modifier.fillMaxWidth(),
-                color = Color.Gray.copy(alpha = 0.5f)
-            ) 
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        singleLine = true,
-        textStyle = LocalTextStyle.current.copy(
-            textAlign = TextAlign.Center, 
-            fontSize = 22.sp, 
-            fontWeight = FontWeight.Bold, 
-            letterSpacing = 8.sp,
-            color = TrueLinePrimary
-        ),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = TrueLinePrimary,
-            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.3f),
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
-            cursorColor = TrueLinePrimary,
-            focusedTextColor = TrueLinePrimary,
-            unfocusedTextColor = TrueLinePrimary
-        )
-    )
 }

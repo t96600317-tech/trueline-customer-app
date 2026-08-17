@@ -14,6 +14,7 @@ val TrueLineAccent = Color(0xFFF2A65A)    // Amber: Call-to-action triggers ONLY
 val TrueLineDarkBg = Color(0xFF0F1B22)    // Dark Background: In-Call screens & Dark Theme
 val TrueLineLightBg = Color(0xFFF4F8F9)   // Light Background: Main app screens
 val TrueLineOnline = Color(0xFF3FBFAD)    // Online Green: Indicators, verified badges, success
+val TrueLineTextSecondary = Color(0xFF64748B) // Muted Secondary Text
 
 // Legacy Aliases for safety (internal use)
 val Primary = TrueLinePrimary

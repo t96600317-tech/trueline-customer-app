@@ -59,7 +59,7 @@ fun App() {
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "onboarding"
+                startDestination = if (viewModel.isAuthSuccess) "main/0" else "onboarding"
             ) {
                 composable("onboarding") {
                     OnboardingScreen(
@@ -73,16 +73,21 @@ fun App() {
                         isLoading = viewModel.isLoading,
                         isSuccess = viewModel.isAuthSuccess,
                         errorMessage = viewModel.errorMessage,
-                        onSendOtp = { viewModel.sendOtp(it) },
-                        onVerifyOtp = { phone, otp -> 
+                        otpCountdown = viewModel.otpCountdown,
+                        canResendOtp = viewModel.canResendOtp,
+                        onSendOtp = { phone, onSuccess -> viewModel.sendOtp(phone, onSuccess) },
+                        onVerifyOtp = { phone, otp ->
                             viewModel.verifyOtp(phone, otp) {
                                 navController.navigate("main/0") {
                                     popUpTo("onboarding") { inclusive = true }
                                 }
                             }
                         },
+                        onResendOtp = { viewModel.resendOtp() },
                         onLoginSuccess = {
-                            // Handled in verifyOtp callback
+                            navController.navigate("main/0") {
+                                popUpTo("onboarding") { inclusive = true }
+                            }
                         },
                         onBack = {
                             navController.popBackStack()
@@ -97,15 +102,16 @@ fun App() {
                     MainScreen(
                         initialTab = initialTab,
                         walletBalance = viewModel.walletBalance.toInt(),
-                        userName = "User", // Users don't have names in v1
+                        userName = "User #${viewModel.userId}",
                         isFirstTimeNameChange = false,
                         selectedLanguageCode = viewModel.selectedLanguage,
                         partners = viewModel.partners,
                         isDiscoverLoading = viewModel.isDiscoverLoading,
                         searchQueryInitial = viewModel.searchQuery,
                         selectedDiscoverLanguage = viewModel.selectedDiscoverLanguage,
-                        conversations = emptyList(), // TODO: Wire chat
-                        isChatListLoading = false,
+                        conversations = viewModel.conversations,
+                        isChatListLoading = viewModel.isChatListLoading,
+                        playingAudioUrl = viewModel.playingAudioUrl,
                         onChatClick = { partner ->
                             val photoUrlEncoded = partner.partner_photo_url.ifBlank { "none" }
                             val titleEncoded = partner.partner_title.ifBlank { "none" }
@@ -114,46 +120,43 @@ fun App() {
                         onNavigateToWallet = {
                             navController.navigate("wallet")
                         },
-                        onAddCoins = { amount -> 
-                            // This would normally be handled by recharge flow
+                        onAddCoins = { _ ->
+                            navController.navigate("wallet")
                         },
                         onUpdateProfile = { _, _ -> },
                         onLanguageUpdate = { code ->
-                            // TODO: Implement update language API
+                            viewModel.updateLanguage(code)
                         },
                         onSearchChanged = { viewModel.onSearchChanged(it) },
                         onDiscoverLanguageSelected = { viewModel.onDiscoverLanguageSelected(it) },
-                        playingAudioUrl = null,
-                        onRefreshChatList = { },
-                        onPlayAudio = { },
+                        onRefreshChatList = { viewModel.fetchConversations() },
+                        onPlayAudio = { viewModel.toggleAudioPlayback(it) },
                         onConnectToListener = { listenerId ->
                             val partner = viewModel.partners.find { it.id == listenerId }
                             val name = partner?.name ?: "Listener"
                             viewModel.connectToListener(listenerId)
                             navController.navigate("audio_call/$name")
+                        },
+                        onLogout = {
+                            viewModel.logout {
+                                navController.navigate("onboarding") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
                         }
                     )
                 }
                 composable("wallet") {
                     WalletScreen(
                         balance = viewModel.walletBalance.toInt(),
+                        isProcessing = viewModel.isPaymentProcessing,
+                        transactions = viewModel.transactions,
+                        isTransactionsLoading = viewModel.isTransactionsLoading,
                         onBack = { navController.popBackStack() },
-                        onRecharge = { amount -> 
-                            // Fixed packs from PRD: ₹49 -> 130 coins
-                            val micros = when(amount) {
-                                130 -> 130000000L
-                                260 -> 260000000L
-                                530 -> 530000000L
-                                else -> amount.toLong() * 1000000L
-                            }
-                            val paise = when(amount) {
-                                130 -> 4900L
-                                260 -> 9900L
-                                530 -> 19900L
-                                else -> (amount.toDouble() * (49.0/130.0) * 100.0).toLong()
-                            }
-                            viewModel.initiateRecharge(paise, micros)
-                        }
+                        onRecharge = { paise, coins ->
+                            viewModel.initiateRecharge(paise, coins)
+                        },
+                        onRefreshTransactions = { viewModel.fetchTransactions() }
                     )
                 }
                 composable(
@@ -203,16 +206,18 @@ fun App() {
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
-                        partnerTitle = title,
-                        partnerPhotoUrl = photoUrl,
-                        messagesList = emptyList(),
-                        isLoading = false,
-                        onLoadMessages = { },
-                        onSendMessage = { _ -> },
+                        partnerTitle = if (title == "none") "" else title,
+                        partnerPhotoUrl = if (photoUrl == "none") "" else photoUrl,
+                        messagesList = viewModel.currentChatMessages,
+                        isLoading = viewModel.isChatMessagesLoading,
+                        onLoadMessages = { viewModel.openChatRoom(id) },
+                        onSendMessage = { content -> viewModel.sendChatMessage(id, content) },
+                        onCallClick = {
+                            viewModel.connectToListener(id)
+                            navController.navigate("audio_call/$name")
+                        },
                         onBack = {
-                            navController.navigate("main/1") {
-                                popUpTo("main/1") { inclusive = true }
-                            }
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -246,7 +251,8 @@ fun MainScreen(
     onDiscoverLanguageSelected: (String) -> Unit,
     onRefreshChatList: () -> Unit,
     onPlayAudio: (url: String) -> Unit,
-    onConnectToListener: (String) -> Unit
+    onConnectToListener: (String) -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf(searchQueryInitial) }
     val languages = listOf("All", "Hindi", "Bhojpuri", "Bengali", "Tamil", "Telugu", "Marathi", "Punjabi")
@@ -473,7 +479,7 @@ fun MainScreen(
                         walletBalance = walletBalance,
                         isFirstTimeNameChange = isFirstTimeNameChange,
                         selectedLanguageCode = selectedLanguageCode,
-                        onLogout = { /* Handle Logout */ },
+                        onLogout = onLogout,
                         onAddCoins = { showAddCoinsSheet = true },
                         onUpdateProfile = onUpdateProfile,
                         onLanguageClick = { showLanguageSheet = true }

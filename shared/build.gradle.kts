@@ -47,6 +47,7 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
             implementation("com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android:+")
+            implementation("com.cashfree.pg:api:2.5.0")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
