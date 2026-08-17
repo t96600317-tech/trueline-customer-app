@@ -167,10 +167,10 @@ fun WalletScreen(balance: Int, onBack: () -> Unit, onRecharge: (Int) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 RechargePackCard(
-                    coins = 120, 
+                    coins = 130, 
                     price = "₹49", 
-                    isSelected = selectedPackageAmount == 120,
-                    onClick = { selectedPackageAmount = 120 },
+                    isSelected = selectedPackageAmount == 130,
+                    onClick = { selectedPackageAmount = 130 },
                     modifier = Modifier.weight(1f)
                 )
                 RechargePackCard(

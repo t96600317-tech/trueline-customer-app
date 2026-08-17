@@ -40,53 +40,19 @@ import androidx.navigation.navArgument
 import org.jetbrains.compose.resources.painterResource
 import truelineapp.shared.generated.resources.Res
 import truelineapp.shared.generated.resources.profile_girl
-import com.example.truelineapp.network.partner.PartnerData
+import com.example.truelineapp.network.ListenerDiscovery
 import com.example.truelineapp.network.chat.ChatConversationData
 import com.example.truelineapp.network.chat.ChatMessageData
 
 @Composable
 @Preview
-fun App(
-    isLoading: Boolean = false,
-    isSuccess: Boolean = false,
-    errorMessage: String? = null,
-    walletBalanceInitial: Int = 10,
-    selectedLanguageInitial: String = "en",
-    partners: List<PartnerData> = emptyList(),
-    isDiscoverLoading: Boolean = false,
-    searchQueryInitial: String = "",
-    selectedDiscoverLanguage: String = "All",
-    playingAudioUrl: String? = null,
-    conversations: List<ChatConversationData> = emptyList(),
-    chatMessages: List<ChatMessageData> = emptyList(),
-    isChatListLoading: Boolean = false,
-    isChatMessagesLoading: Boolean = false,
-    onSendOtp: (String) -> Unit = {},
-    onVerifyOtp: (String, String) -> Unit = { _, _ -> },
-    onLanguageUpdate: (String) -> Unit = {},
-    onSearchChanged: (String) -> Unit = {},
-    onDiscoverLanguageSelected: (String) -> Unit = {},
-    onPlayAudio: (url: String) -> Unit = {},
-    onLoadMessages: (partnerId: String) -> Unit = {},
-    onSendMessage: (partnerId: String, content: String) -> Unit = { _, _ -> },
-    onRefreshChatList: () -> Unit = {},
-    onAuthSuccess: (token: String) -> Unit = {}
-) {
+fun App() {
+    val scope = rememberCoroutineScope()
+    val viewModel = remember { MainViewModel(scope) }
+
     TrueLineTheme {
         val navController = rememberNavController()
-        var walletBalance by rememberSaveable { mutableIntStateOf(walletBalanceInitial) }
-        var isFirstTimeNameChange by rememberSaveable { mutableStateOf(true) }
-        var userName by rememberSaveable { mutableStateOf("Prithvi") }
-        var selectedLanguageCode by rememberSaveable { mutableStateOf(selectedLanguageInitial) }
         
-        LaunchedEffect(walletBalanceInitial) {
-            walletBalance = walletBalanceInitial
-        }
-
-        LaunchedEffect(selectedLanguageInitial) {
-            selectedLanguageCode = selectedLanguageInitial
-        }
-
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
@@ -104,15 +70,19 @@ fun App(
                 }
                 composable("login") {
                     LoginScreen(
-                        isLoading = isLoading,
-                        isSuccess = isSuccess,
-                        errorMessage = errorMessage,
-                        onSendOtp = onSendOtp,
-                        onVerifyOtp = onVerifyOtp,
-                        onLoginSuccess = {
-                            navController.navigate("main/0") {
-                                popUpTo("onboarding") { inclusive = true }
+                        isLoading = viewModel.isLoading,
+                        isSuccess = viewModel.isAuthSuccess,
+                        errorMessage = viewModel.errorMessage,
+                        onSendOtp = { viewModel.sendOtp(it) },
+                        onVerifyOtp = { phone, otp -> 
+                            viewModel.verifyOtp(phone, otp) {
+                                navController.navigate("main/0") {
+                                    popUpTo("onboarding") { inclusive = true }
+                                }
                             }
+                        },
+                        onLoginSuccess = {
+                            // Handled in verifyOtp callback
                         },
                         onBack = {
                             navController.popBackStack()
@@ -126,16 +96,16 @@ fun App(
                     val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
                     MainScreen(
                         initialTab = initialTab,
-                        walletBalance = walletBalance,
-                        userName = userName,
-                        isFirstTimeNameChange = isFirstTimeNameChange,
-                        selectedLanguageCode = selectedLanguageCode,
-                        partners = partners,
-                        isDiscoverLoading = isDiscoverLoading,
-                        searchQueryInitial = searchQueryInitial,
-                        selectedDiscoverLanguage = selectedDiscoverLanguage,
-                        conversations = conversations,
-                        isChatListLoading = isChatListLoading,
+                        walletBalance = viewModel.walletBalance.toInt(),
+                        userName = "User", // Users don't have names in v1
+                        isFirstTimeNameChange = false,
+                        selectedLanguageCode = viewModel.selectedLanguage,
+                        partners = viewModel.partners,
+                        isDiscoverLoading = viewModel.isDiscoverLoading,
+                        searchQueryInitial = viewModel.searchQuery,
+                        selectedDiscoverLanguage = viewModel.selectedDiscoverLanguage,
+                        conversations = emptyList(), // TODO: Wire chat
+                        isChatListLoading = false,
                         onChatClick = { partner ->
                             val photoUrlEncoded = partner.partner_photo_url.ifBlank { "none" }
                             val titleEncoded = partner.partner_title.ifBlank { "none" }
@@ -145,34 +115,44 @@ fun App(
                             navController.navigate("wallet")
                         },
                         onAddCoins = { amount -> 
-                            walletBalance += amount 
+                            // This would normally be handled by recharge flow
                         },
-                        onUpdateProfile = { newName, cost ->
-                            userName = newName
-                            walletBalance -= cost
-                            isFirstTimeNameChange = false
-                        },
+                        onUpdateProfile = { _, _ -> },
                         onLanguageUpdate = { code ->
-                            selectedLanguageCode = code
-                            onLanguageUpdate(code)
+                            // TODO: Implement update language API
                         },
-                        onSearchChanged = onSearchChanged,
-                        onDiscoverLanguageSelected = onDiscoverLanguageSelected,
-                        playingAudioUrl = playingAudioUrl,
-                        onRefreshChatList = onRefreshChatList,
-                        onPlayAudio = onPlayAudio,
-                        onCallClick = { partner ->
-                            navController.navigate("audio_call/${partner.name}")
+                        onSearchChanged = { viewModel.onSearchChanged(it) },
+                        onDiscoverLanguageSelected = { viewModel.onDiscoverLanguageSelected(it) },
+                        playingAudioUrl = null,
+                        onRefreshChatList = { },
+                        onPlayAudio = { },
+                        onConnectToListener = { listenerId ->
+                            val partner = viewModel.partners.find { it.id == listenerId }
+                            val name = partner?.name ?: "Listener"
+                            viewModel.connectToListener(listenerId)
+                            navController.navigate("audio_call/$name")
                         }
                     )
                 }
                 composable("wallet") {
                     WalletScreen(
-                        balance = walletBalance,
+                        balance = viewModel.walletBalance.toInt(),
                         onBack = { navController.popBackStack() },
                         onRecharge = { amount -> 
-                            println("Initiating payment for $amount coins...")
-                            walletBalance += amount
+                            // Fixed packs from PRD: ₹49 -> 130 coins
+                            val micros = when(amount) {
+                                130 -> 130000000L
+                                260 -> 260000000L
+                                530 -> 530000000L
+                                else -> amount.toLong() * 1000000L
+                            }
+                            val paise = when(amount) {
+                                130 -> 4900L
+                                260 -> 9900L
+                                530 -> 19900L
+                                else -> (amount.toDouble() * (49.0/130.0) * 100.0).toLong()
+                            }
+                            viewModel.initiateRecharge(paise, micros)
                         }
                     )
                 }
@@ -204,14 +184,20 @@ fun App(
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
+<<<<<<< HEAD
                         partnerTitle = title,
                         partnerPhotoUrl = photoUrl,
                         messagesList = chatMessages,
                         isLoading = isChatMessagesLoading,
                         onLoadMessages = { onLoadMessages(id) },
                         onSendMessage = { content -> onSendMessage(id, content) },
+=======
+                        messagesList = emptyList(),
+                        isLoading = false,
+                        onLoadMessages = { },
+                        onSendMessage = { content -> },
+>>>>>>> 3eca5b8 (feat(customer): update models, wallet, and repository)
                         onBack = {
-                            onRefreshChatList()
                             navController.navigate("main/1") {
                                 popUpTo("main/1") { inclusive = true }
                             }
@@ -232,7 +218,7 @@ fun MainScreen(
     userName: String,
     isFirstTimeNameChange: Boolean,
     selectedLanguageCode: String,
-    partners: List<PartnerData>,
+    partners: List<ListenerDiscovery>,
     isDiscoverLoading: Boolean,
     searchQueryInitial: String,
     selectedDiscoverLanguage: String,
@@ -248,7 +234,7 @@ fun MainScreen(
     onDiscoverLanguageSelected: (String) -> Unit,
     onRefreshChatList: () -> Unit,
     onPlayAudio: (url: String) -> Unit,
-    onCallClick: (PartnerData) -> Unit
+    onConnectToListener: (String) -> Unit
 ) {
     var searchQuery by remember { mutableStateOf(searchQueryInitial) }
     val languages = listOf("All", "Hindi", "Bhojpuri", "Bengali", "Tamil", "Telugu", "Marathi", "Punjabi")
@@ -450,7 +436,7 @@ fun MainScreen(
                                     onPlayClick = { onPlayAudio(partner.audio_sample_url) },
                                     onConnectClick = {
                                         if (walletBalance >= partner.rate_per_min) {
-                                            onCallClick(partner)
+                                            onConnectToListener(partner.id)
                                         } else {
                                             pendingListenerName = partner.name
                                             showAddCoinsSheet = true
@@ -488,7 +474,7 @@ fun MainScreen(
 
 @Composable
 fun ExactReplicaCard(
-    partner: PartnerData, 
+    partner: ListenerDiscovery, 
     isPlaying: Boolean,
     onCardClick: () -> Unit,
     onPlayClick: () -> Unit,
@@ -523,11 +509,29 @@ fun ExactReplicaCard(
                     border = BorderStroke(2.dp, Color.White),
                     shadowElevation = 4.dp
                 ) {
+<<<<<<< HEAD
                     ListenerAvatar(
                         name = partner.name,
                         modifier = Modifier.fillMaxSize(),
                         fontSize = 42.sp
                     )
+=======
+                    if (partner.photo_url.isNotBlank()) {
+                        Image(
+                            painter = painterResource(Res.drawable.profile_girl),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(Res.drawable.profile_girl),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+>>>>>>> 3eca5b8 (feat(customer): update models, wallet, and repository)
                 }
 
                 // ONLINE Badge (Top Right Position)

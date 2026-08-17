@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-data class CoinPackage(val coins: Int, val price: Int, val isPopular: Boolean = false)
+data class CoinPackage(val id: String, val coins: Int, val price: Int, val isPopular: Boolean = false)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,12 +26,12 @@ fun AddCoinsBottomSheet(
     listenerName: String,
     currentBalance: Int,
     onDismiss: () -> Unit,
-    onAddCoins: (Int) -> Unit
+    onAddCoins: (CoinPackage) -> Unit
 ) {
     val packages = listOf(
-        CoinPackage(120, 49),
-        CoinPackage(260, 99, isPopular = true),
-        CoinPackage(530, 199)
+        CoinPackage("pack_49", 130, 49),
+        CoinPackage("pack_99", 260, 99, isPopular = true),
+        CoinPackage("pack_199", 530, 199)
     )
     
     var selectedPackage by remember { mutableStateOf(packages[1]) }
@@ -98,95 +98,83 @@ fun AddCoinsBottomSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
-
-            var isLoading by remember { mutableStateOf(false) }
-            val scope = rememberCoroutineScope()
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = { 
-                    scope.launch {
-                        isLoading = true
-                        delay(1500) // Buffer to show animation
-                        onAddCoins(selectedPackage.coins)
-                        isLoading = false
-                    }
-                },
+                onClick = { onAddCoins(selectedPackage) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .navigationBarsPadding(), 
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = TrueLinePrimary,
-                    disabledContainerColor = TrueLinePrimary
-                ),
-                enabled = !isLoading
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = TrueLinePrimary),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                if (isLoading) {
-                    WaveformLoadingIndicator(
-                        maxBarHeight = 32.dp,
-                        barWidth = 5.dp,
-                        gap = 4.dp
-                    )
-                } else {
-                    Text("Add Coins & Proceed", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                }
+                Text(
+                    text = "Pay ₹${selectedPackage.price} for ${selectedPackage.coins} Coins",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
             }
         }
     }
 }
 
 @Composable
-fun PackageCard(pkg: CoinPackage, isSelected: Boolean, onClick: () -> Unit) {
-    Box {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = if (pkg.isPopular) 10.dp else 0.dp)
-                .clickable { onClick() },
-            shape = RoundedCornerShape(16.dp),
-            color = if (isSelected) Color.White else TrueLineLightBg,
-            border = if (isSelected) BorderStroke(1.dp, TrueLineAccent) else BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
+fun PackageCard(
+    pkg: CoinPackage,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        color = if (isSelected) TrueLinePrimary.copy(alpha = 0.08f) else Color.White,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) TrueLinePrimary else Color.LightGray.copy(alpha = 0.5f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(vertical = 14.dp, horizontal = 8.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(vertical = 16.dp, horizontal = 4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CoinLogo(size = 14.dp)
-                    Spacer(modifier = Modifier.width(4.dp))
+            if (pkg.isPopular) {
+                Surface(
+                    color = TrueLineSecondary,
+                    shape = RoundedCornerShape(4.dp),
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
                     Text(
-                        text = pkg.coins.toString(), 
-                        fontWeight = FontWeight.Bold, 
-                        fontSize = 16.sp, 
-                        color = TrueLineDarkBg
+                        text = "POPULAR",
+                        color = Color.White,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "₹${pkg.price}", 
-                    fontSize = 14.sp, 
-                    color = TrueLineOnline,
-                    fontWeight = FontWeight.Bold
-                )
             }
-        }
-        
-        if (pkg.isPopular) {
-            Surface(
-                color = TrueLineAccent,
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.align(Alignment.TopCenter)
-            ) {
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CoinLogo(size = 14.dp)
+                Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    "Best value",
-                    color = Color.White,
-                    fontSize = 8.sp,
+                    text = "${pkg.coins}",
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    fontSize = 18.sp,
+                    color = TrueLineDarkBg
                 )
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "₹${pkg.price}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = TrueLinePrimary
+            )
         }
     }
 }

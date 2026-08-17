@@ -1,43 +1,29 @@
 package com.example.truelineapp.network.user
 
+import com.example.truelineapp.network.customer.CustomerRepository
 import com.example.truelineapp.network.ApiResponse
-import retrofit2.Response
 
-class UserRepository(private val apiService: UserApiService) {
+class UserRepository(private val repository: CustomerRepository) {
 
-    suspend fun getUserProfile(): Result<UserProfileData> {
-        return try {
-            val response = apiService.getUserProfile()
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.success && body.data != null) {
-                    Result.success(body.data)
-                } else {
-                    Result.failure(Exception(body?.error?.message ?: "Unknown error"))
-                }
-            } else {
-                Result.failure(Exception("HTTP_${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun getUserProfile(): ApiResponse<UserProfileData> {
+        // We'll need a better way to map generic Map from CustomerRepository to UserProfileData
+        // For now, let's just make CustomerRepository return the right type or use generic
+        return repository.getUserProfile()
     }
+    
+    suspend fun getListeners(language: String? = null, search: String? = null) = 
+        repository.getListeners(language, search)
 
-    suspend fun updateLanguagePreference(languageCode: String): Result<String> {
-        return try {
-            val response = apiService.updateLanguagePreference(mapOf("language" to languageCode))
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null && body.success) {
-                    Result.success(body.data?.get("message") ?: "Success")
-                } else {
-                    Result.failure(Exception(body?.error?.message ?: "Unknown error"))
-                }
-            } else {
-                Result.failure(Exception("HTTP_${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
+    suspend fun requestOtp(phone: String) = repository.requestOtp(phone)
+    
+    suspend fun verifyOtp(phone: String, otp: String) = repository.verifyOtp(phone, otp)
+    
+    suspend fun initiateCall(listenerId: String) = repository.initiateCall(listenerId)
+    
+    suspend fun endCall(sessionId: String, reason: String) = repository.endCall(sessionId, reason)
+    
+    fun observeCallEvents(sessionId: String) = repository.observeCallEvents(sessionId)
+    
+    suspend fun initiateRecharge(amountPaise: Long, coinsMicros: Long) = 
+        repository.initiateRecharge(amountPaise, coinsMicros)
 }

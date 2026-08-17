@@ -43,10 +43,6 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
-            implementation(libs.retrofit.core)
-            implementation(libs.retrofit.converter.gson)
-            implementation(libs.okhttp.core)
-            implementation(libs.okhttp.logging.interceptor)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.androidx.activity.compose)
         }
@@ -63,6 +59,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content-negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.ktor.client.websockets)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
