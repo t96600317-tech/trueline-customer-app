@@ -1,6 +1,7 @@
 package com.example.truelineapp
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -13,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -20,13 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Headset
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
+import org.jetbrains.compose.resources.painterResource
+import truelineapp.shared.generated.resources.Res
+import truelineapp.shared.generated.resources.onboarding_talk
 
 data class OnboardingItem(
     val title: String,
@@ -75,12 +75,24 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
             OnboardingPage(items[page], pageIndex = page)
         }
 
+        // CONSTANT TOP HEADER (Logo + Brand Text stays stationary during page swipes)
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 76.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            TrueLineLogo(size = 110.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+            TrueLineBrandText(fontSize = 32.sp, textColor = TrueLineDarkBg)
+        }
+
         if (pagerState.currentPage < items.size - 1) {
             TextButton(
                 onClick = onGetStarted,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 40.dp, end = 16.dp)
+                    .padding(top = 76.dp, end = 16.dp)
             ) {
                 Text("Skip", color = Color.Gray, fontWeight = FontWeight.SemiBold)
             }
@@ -134,61 +146,17 @@ fun OnboardingScreen(onGetStarted: () -> Unit) {
 }
 
 @Composable
-fun PeopleTalkingOnPhoneIllustration() {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp)
-    ) {
-        // Man Profile Icon
-        Surface(
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.2f),
-            modifier = Modifier.size(34.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Man",
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Phone Connection Icon
-        Icon(
-            imageVector = Icons.Default.Call,
-            contentDescription = "Phone Call",
-            tint = TrueLineAccent,
-            modifier = Modifier.size(22.dp)
-        )
-
-        Spacer(modifier = Modifier.width(4.dp))
-
-        // Woman Profile Icon
-        Surface(
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.2f),
-            modifier = Modifier.size(34.dp)
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    imageVector = Icons.Default.Face,
-                    contentDescription = "Woman",
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun OnboardingIllustration(pageIndex: Int, accentColor: Color) {
-    if (pageIndex == 3) {
+    if (pageIndex == 0) {
+        Image(
+            painter = painterResource(Res.drawable.onboarding_talk),
+            contentDescription = "Man and Woman talking on phone",
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(190.dp),
+            contentScale = ContentScale.Fit
+        )
+    } else if (pageIndex == 3) {
         // Original concentric rings with mic emoji as it was originally
         Box(
             modifier = Modifier
@@ -228,7 +196,6 @@ fun OnboardingIllustration(pageIndex: Int, accentColor: Color) {
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         when (pageIndex) {
-                            0 -> PeopleTalkingOnPhoneIllustration()
                             1 -> Icon(
                                 imageVector = Icons.Default.VerifiedUser,
                                 contentDescription = "Verified ID",
@@ -258,17 +225,14 @@ fun OnboardingPage(item: OnboardingItem, pageIndex: Int) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            TrueLineLogo(size = 120.dp)
-            Spacer(modifier = Modifier.height(24.dp))
-            TrueLineBrandText(fontSize = 32.sp, textColor = TrueLineDarkBg)
-            
-            Spacer(modifier = Modifier.height(40.dp))
-            
+        Column(
+            modifier = Modifier.padding(top = 215.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             OnboardingIllustration(pageIndex = pageIndex, accentColor = item.accentColor)
         }
 
-        Spacer(modifier = Modifier.height(64.dp))
+        Spacer(modifier = Modifier.height(28.dp))
 
         Text(
             text = item.subtitle,
@@ -290,7 +254,7 @@ fun OnboardingPage(item: OnboardingItem, pageIndex: Int) {
             color = TrueLineDarkBg
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = item.description,
@@ -300,6 +264,6 @@ fun OnboardingPage(item: OnboardingItem, pageIndex: Int) {
             lineHeight = 26.sp
         )
         
-        Spacer(modifier = Modifier.height(100.dp)) 
+        Spacer(modifier = Modifier.height(60.dp)) 
     }
 }

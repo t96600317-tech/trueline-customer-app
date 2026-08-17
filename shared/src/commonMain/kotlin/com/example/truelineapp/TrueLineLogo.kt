@@ -19,16 +19,69 @@ import org.jetbrains.compose.resources.painterResource
 import truelineapp.shared.generated.resources.Res
 import truelineapp.shared.generated.resources.app_logo
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Surface
+
 @Composable
 fun TrueLineLogo(size: Dp = 40.dp, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(Res.drawable.app_logo),
-        contentDescription = "TrueLine Logo",
-        modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape(size * 0.22f)),
-        contentScale = ContentScale.Fit
-    )
+    Surface(
+        modifier = modifier.size(size),
+        color = Color(0xFF2D6A6B),
+        shape = RoundedCornerShape(size * 0.26f),
+        shadowElevation = 4.dp
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier.size(size * 0.52f),
+                shape = CircleShape,
+                color = Color(0xFF235556),
+                border = BorderStroke((size * 0.02f).coerceAtLeast(1.dp), Color.White.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = size * 0.08f),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Bar 1 (Short White Pill)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight(0.30f)
+                            .width((size * 0.055f).coerceAtLeast(2.dp))
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    )
+                    // Bar 2 (Medium White Pill)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight(0.65f)
+                            .width((size * 0.055f).coerceAtLeast(2.dp))
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    )
+                    // Bar 3 (Tall Orange Pill)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight(0.90f)
+                            .width((size * 0.055f).coerceAtLeast(2.dp))
+                            .clip(CircleShape)
+                            .background(Color(0xFFEE9037))
+                    )
+                    // Bar 4 (Medium White Pill)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight(0.55f)
+                            .width((size * 0.055f).coerceAtLeast(2.dp))
+                            .clip(CircleShape)
+                            .background(Color.White)
+                    )
+                }
+            }
+        }
+    }
 }
 
 
