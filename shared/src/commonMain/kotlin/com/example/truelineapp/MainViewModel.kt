@@ -36,6 +36,10 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     // --- Call State ---
     var activeSessionId by mutableStateOf<String?>(null)
+    var currentCallingPartner by mutableStateOf<ListenerDiscovery?>(null)
+    var showPostCallRating by mutableStateOf(false)
+    var lastCallDuration by mutableStateOf(180)
+    var lastCallCoinsDeducted by mutableStateOf(27)
     var callEventsJob: Job? = null
 
     fun sendOtp(phone: String) {
@@ -102,26 +106,72 @@ class MainViewModel(private val scope: CoroutineScope) {
         fetchListeners()
     }
 
-    fun initiateRecharge(packId: String) {
+    fun initiateRecharge(paise: Long, micros: Long) {
         scope.launch {
-            val res = repository.initiateRecharge(packId)
+            val res = repository.initiateRecharge("pack_${paise / 100}")
             if (res.success && res.data != null) {
                 println("Order created: ${res.data.order_id}")
             }
         }
     }
 
-    fun connectToListener(listenerId: String) {
+    fun connectToListener(
+        partnerId: String,
+        onCallReady: (roomId: String, token: String, targetUserId: String, targetUserName: String) -> Unit = { _, _, _, _ -> }
+    ) {
+        val partner = partners.find { it.id == partnerId }
+        currentCallingPartner = partner
+        isLoading = true
+        errorMessage = null
+
         scope.launch {
-            val res = repository.initiateCall(listenerId)
+            val res = repository.initiateCall(partnerId)
+            isLoading = false
             if (res.success && res.data != null) {
                 activeSessionId = res.data.session_id
                 startCallEventObserver(res.data.session_id)
-                // In real app, join Zego room here
+                onCallReady(
+                    res.data.room_id,
+                    res.data.user_token,
+                    partnerId,
+                    partner?.name ?: "Listener"
+                )
             } else {
                 errorMessage = res.error?.message ?: "Call initiation failed"
             }
         }
+    }
+
+    fun onCallFinished(durationSeconds: Int = 180) {
+        lastCallDuration = durationSeconds
+        val rate = currentCallingPartner?.rate_per_min ?: 9.0
+        lastCallCoinsDeducted = (((durationSeconds + 59) / 60) * rate).toInt()
+        showPostCallRating = true
+        activeSessionId?.let { sid ->
+            scope.launch {
+                repository.endCall(sid, "user_hangup")
+                fetchUserProfile()
+            }
+        }
+    }
+
+    fun submitRating(rating: Int, tags: List<String>, isFavorite: Boolean) {
+        val sid = activeSessionId
+        val pid = currentCallingPartner?.id
+        showPostCallRating = false
+        currentCallingPartner = null
+        activeSessionId = null
+        if (sid != null) {
+            scope.launch {
+                repository.rateCall(sid, rating, tags, isFavorite)
+            }
+        }
+    }
+
+    fun dismissRating() {
+        showPostCallRating = false
+        currentCallingPartner = null
+        activeSessionId = null
     }
 
     private fun startCallEventObserver(sessionId: String) {
@@ -131,7 +181,6 @@ class MainViewModel(private val scope: CoroutineScope) {
                 when (event.type) {
                     "balance_updated" -> fetchUserProfile()
                     "call_ended" -> {
-                        activeSessionId = null
                         callEventsJob?.cancel()
                     }
                 }

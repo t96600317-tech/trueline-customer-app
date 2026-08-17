@@ -164,7 +164,26 @@ fun App() {
                     AudioCallScreen(
                         listenerName = name,
                         onHangUp = {
-                            navController.popBackStack()
+                            viewModel.onCallFinished(180)
+                            navController.navigate("post_call_rating") {
+                                popUpTo("audio_call/{name}") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable("post_call_rating") {
+                    val partnerName = viewModel.currentCallingPartner?.name ?: "Listener"
+                    PostCallRatingScreen(
+                        listenerName = partnerName,
+                        callDurationSeconds = viewModel.lastCallDuration,
+                        coinsDeducted = viewModel.lastCallCoinsDeducted,
+                        onSubmit = { rating, tags, isFavorite ->
+                            viewModel.submitRating(rating, tags, isFavorite)
+                            navController.popBackStack("main/0", inclusive = false)
+                        },
+                        onSkip = {
+                            viewModel.dismissRating()
+                            navController.popBackStack("main/0", inclusive = false)
                         }
                     )
                 }
@@ -184,19 +203,12 @@ fun App() {
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
-<<<<<<< HEAD
                         partnerTitle = title,
                         partnerPhotoUrl = photoUrl,
-                        messagesList = chatMessages,
-                        isLoading = isChatMessagesLoading,
-                        onLoadMessages = { onLoadMessages(id) },
-                        onSendMessage = { content -> onSendMessage(id, content) },
-=======
                         messagesList = emptyList(),
                         isLoading = false,
                         onLoadMessages = { },
-                        onSendMessage = { content -> },
->>>>>>> 3eca5b8 (feat(customer): update models, wallet, and repository)
+                        onSendMessage = { _ -> },
                         onBack = {
                             navController.navigate("main/1") {
                                 popUpTo("main/1") { inclusive = true }
@@ -254,8 +266,8 @@ fun MainScreen(
             listenerName = pendingListenerName,
             currentBalance = walletBalance,
             onDismiss = { showAddCoinsSheet = false },
-            onAddCoins = { amount ->
-                onAddCoins(amount)
+            onAddCoins = { pkg ->
+                onAddCoins(pkg.coins)
                 showAddCoinsSheet = false
             }
         )
@@ -509,29 +521,12 @@ fun ExactReplicaCard(
                     border = BorderStroke(2.dp, Color.White),
                     shadowElevation = 4.dp
                 ) {
-<<<<<<< HEAD
-                    ListenerAvatar(
-                        name = partner.name,
+                    Image(
+                        painter = painterResource(Res.drawable.profile_girl),
+                        contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
-                        fontSize = 42.sp
+                        contentScale = ContentScale.Crop
                     )
-=======
-                    if (partner.photo_url.isNotBlank()) {
-                        Image(
-                            painter = painterResource(Res.drawable.profile_girl),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(Res.drawable.profile_girl),
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
->>>>>>> 3eca5b8 (feat(customer): update models, wallet, and repository)
                 }
 
                 // ONLINE Badge (Top Right Position)

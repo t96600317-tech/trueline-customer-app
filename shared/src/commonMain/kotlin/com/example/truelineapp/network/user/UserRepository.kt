@@ -25,5 +25,5 @@ class UserRepository(private val repository: CustomerRepository) {
     fun observeCallEvents(sessionId: String) = repository.observeCallEvents(sessionId)
     
     suspend fun initiateRecharge(amountPaise: Long, coinsMicros: Long) = 
-        repository.initiateRecharge(amountPaise, coinsMicros)
+        repository.initiateRecharge("pack_${amountPaise / 100}")
 }

@@ -153,4 +153,19 @@ class CustomerRepository(
             ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Unknown error"))
         }
     }
+
+    suspend fun rateCall(sessionId: String, rating: Int, tags: List<String>, isFavorite: Boolean): ApiResponse<Map<String, String>> {
+        return try {
+            client.post("calls/$sessionId/rate") {
+                contentType(ContentType.Application.Json)
+                setBody(mapOf(
+                    "rating" to rating,
+                    "tags" to tags,
+                    "is_favorite" to isFavorite
+                ))
+            }.body()
+        } catch (e: Exception) {
+            ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Unknown error"))
+        }
+    }
 }

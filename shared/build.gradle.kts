@@ -45,6 +45,7 @@ kotlin {
             implementation(libs.compose.uiTooling)
             implementation(libs.kotlinx.coroutines.android)
             implementation(libs.androidx.activity.compose)
+            implementation("com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android:+")
         }
         commonMain.dependencies {
             implementation(libs.compose.runtime)
@@ -60,7 +61,7 @@ kotlin {
             implementation("org.jetbrains.compose.material:material-icons-core:1.7.3")
             implementation("org.jetbrains.compose.material:material-icons-extended:1.7.3")
             implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.content-negotiation)
+            implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.websockets)
