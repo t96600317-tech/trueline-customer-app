@@ -37,16 +37,27 @@ data class TransactionItem(
 )
 
 class CustomerRepository(
-    private var primaryHost: String = "192.168.1.6:8080"
+    private var primaryHost: String = "api.truelineapp.in"
 ) {
     private val storage = getSessionStorage()
     private var authToken: String? = storage.getAuthToken()
     private val candidateHosts = listOf(
+        "api.truelineapp.in",
         "192.168.1.6:8080",
         "10.0.2.2:8080",
         "127.0.0.1:8080",
         "localhost:8080"
     ).distinct()
+
+    private fun getBaseUrl(host: String): String {
+        return if (host.startsWith("http://") || host.startsWith("https://")) {
+            host
+        } else if (host.contains("api.truelineapp.in") || !host.contains(":")) {
+            "https://$host"
+        } else {
+            "http://$host"
+        }
+    }
 
     private val client = HttpClient {
         install(HttpTimeout) {
@@ -105,7 +116,7 @@ class CustomerRepository(
     suspend fun requestOtp(phone: String): ApiResponse<OtpResponse> {
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/auth/otp/request") {
+                client.post("${getBaseUrl(host)}/api/v1/auth/otp/request") {
                     contentType(ContentType.Application.Json)
                     setBody(OtpRequest(phone, "user"))
                 }.body()
@@ -118,7 +129,7 @@ class CustomerRepository(
     suspend fun verifyOtp(phone: String, otp: String): ApiResponse<AuthResponse> {
         val response: ApiResponse<AuthResponse> = try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/auth/otp/verify") {
+                client.post("${getBaseUrl(host)}/api/v1/auth/otp/verify") {
                     contentType(ContentType.Application.Json)
                     setBody(OtpVerifyRequest(phone, otp, "user"))
                 }.body()
@@ -139,7 +150,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/user/me") {
+                client.get("${getBaseUrl(host)}/api/v1/user/me") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -153,7 +164,7 @@ class CustomerRepository(
         storage.saveLanguage(langCode)
         return try {
             executeWithFallback { host ->
-                client.patch("http://$host/api/v1/user/language") {
+                client.patch("${getBaseUrl(host)}/api/v1/user/language") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("language_pref" to langCode))
@@ -168,7 +179,7 @@ class CustomerRepository(
     suspend fun getListeners(language: String? = null, search: String? = null): ApiResponse<List<ListenerDiscovery>> {
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/listeners") {
+                client.get("${getBaseUrl(host)}/api/v1/listeners") {
                     language?.let { parameter("language", it) }
                     search?.let { parameter("search", it) }
                 }.body()
@@ -183,7 +194,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/calls/initiate") {
+                client.post("${getBaseUrl(host)}/api/v1/calls/initiate") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(CallInitiateRequest(listenerId))
@@ -198,7 +209,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/calls/$sessionId/end") {
+                client.post("${getBaseUrl(host)}/api/v1/calls/$sessionId/end") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("reason" to reason))
@@ -213,7 +224,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/calls/$sessionId/rate") {
+                client.post("${getBaseUrl(host)}/api/v1/calls/$sessionId/rate") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf(
@@ -230,10 +241,11 @@ class CustomerRepository(
 
     fun observeCallEvents(sessionId: String): Flow<CallEvent> = flow {
         val token = getAuthToken()
+        val isSecure = primaryHost.contains("api.truelineapp.in")
         client.webSocket(
             method = HttpMethod.Get,
             host = primaryHost.split(":")[0],
-            port = primaryHost.split(":").getOrNull(1)?.toInt() ?: 8080,
+            port = if (isSecure) 443 else (primaryHost.split(":").getOrNull(1)?.toInt() ?: 8080),
             path = "/api/v1/calls/$sessionId/events?token=$token"
         ) {
             while (true) {
@@ -251,7 +263,7 @@ class CustomerRepository(
     suspend fun getRechargeCatalogue(): ApiResponse<List<RechargePack>> {
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/payments/catalogue").body()
+                client.get("${getBaseUrl(host)}/api/v1/payments/catalogue").body()
             }
         } catch (e: Exception) {
             ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to load catalogue"))
@@ -262,7 +274,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/payments/create-order") {
+                client.post("${getBaseUrl(host)}/api/v1/payments/create-order") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf(
@@ -280,7 +292,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/payments/orders/$orderId/verify") {
+                client.get("${getBaseUrl(host)}/api/v1/payments/orders/$orderId/verify") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -293,7 +305,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/wallet/transactions") {
+                client.get("${getBaseUrl(host)}/api/v1/wallet/transactions") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -307,7 +319,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/chat/conversations") {
+                client.get("${getBaseUrl(host)}/api/v1/chat/conversations") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -320,7 +332,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.get("http://$host/api/v1/chat/conversations/$partnerId/messages") {
+                client.get("${getBaseUrl(host)}/api/v1/chat/conversations/$partnerId/messages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -333,7 +345,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { host ->
-                client.post("http://$host/api/v1/chat/conversations/$partnerId/messages") {
+                client.post("${getBaseUrl(host)}/api/v1/chat/conversations/$partnerId/messages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("content" to content))
