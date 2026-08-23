@@ -383,13 +383,17 @@ class MainViewModel(private val scope: CoroutineScope) {
     private fun startCallEventObserver(sessionId: String) {
         callEventsJob?.cancel()
         callEventsJob = scope.launch {
-            repository.observeCallEvents(sessionId).collect { event ->
-                when (event.type) {
-                    "balance_updated" -> fetchUserProfile()
-                    "call_ended" -> {
-                        callEventsJob?.cancel()
+            try {
+                repository.observeCallEvents(sessionId).collect { event ->
+                    when (event.type) {
+                        "balance_updated" -> fetchUserProfile()
+                        "call_ended" -> {
+                            callEventsJob?.cancel()
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                // Ignore call event stream exceptions
             }
         }
     }

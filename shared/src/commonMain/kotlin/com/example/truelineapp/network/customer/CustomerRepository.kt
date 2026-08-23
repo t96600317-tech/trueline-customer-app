@@ -263,25 +263,31 @@ class CustomerRepository(
 
     fun observeCallEvents(sessionId: String): Flow<CallEvent> = flow {
         val token = getAuthToken()
+        if (token.isNullOrBlank()) return@flow
+        
         val isProd = primaryHost.contains("truelineapp.in")
         
-        client.webSocket(
-            method = HttpMethod.Get,
-            host = primaryHost.split(":")[0],
-            port = if (isProd) null else (primaryHost.split(":").getOrNull(1)?.toInt() ?: 8080),
-            path = "/api/v1/calls/$sessionId/events?token=$token",
-            request = {
-                if (isProd) url { protocol = URLProtocol.WSS }
-            }
-        ) {
-            while (true) {
-                try {
-                    val event = receiveDeserialized<CallEvent>()
-                    emit(event)
-                } catch (e: Exception) {
-                    break
+        try {
+            client.webSocket(
+                method = HttpMethod.Get,
+                host = primaryHost.split(":")[0],
+                port = if (isProd) null else (primaryHost.split(":").getOrNull(1)?.toInt() ?: 8080),
+                path = "/api/v1/calls/$sessionId/events?token=$token",
+                request = {
+                    if (isProd) url { protocol = URLProtocol.WSS }
+                }
+            ) {
+                while (true) {
+                    try {
+                        val event = receiveDeserialized<CallEvent>()
+                        emit(event)
+                    } catch (e: Exception) {
+                        break
+                    }
                 }
             }
+        } catch (e: Exception) {
+            // Silently absorb WebSocket handshake or protocol exceptions so app never crashes
         }
     }
 
