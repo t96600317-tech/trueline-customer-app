@@ -13,6 +13,8 @@ class MainActivity : ComponentActivity() {
         
         // Initialize Android Session Storage for persistent customer JWT
         com.example.truelineapp.storage.initCustomerSessionStorage(this)
+        com.example.truelineapp.audio.initAudioPlayer(this)
+        com.example.truelineapp.call.initCallService(this)
 
         // Ensure status bar icons are dark (since background is light)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true

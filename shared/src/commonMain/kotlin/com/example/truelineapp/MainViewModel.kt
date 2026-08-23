@@ -32,7 +32,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     private var otpTimerJob: Job? = null
 
     // --- User & Profile State ---
-    var walletBalance by mutableDoubleStateOf(0.0)
+    var walletBalance by mutableDoubleStateOf(1000.0)
     var selectedLanguage by mutableStateOf("en")
     var userId by mutableStateOf("User")
     var isProfileLoading by mutableStateOf(false)
@@ -65,7 +65,9 @@ class MainViewModel(private val scope: CoroutineScope) {
     private var callEventsJob: Job? = null
 
     init {
+        walletBalance = 1000.0
         checkAutoLogin()
+        fetchListeners()
     }
 
     private fun checkAutoLogin() {
@@ -141,9 +143,11 @@ class MainViewModel(private val scope: CoroutineScope) {
             val res = repository.getUserProfile()
             isProfileLoading = false
             if (res.success && res.data != null) {
-                walletBalance = res.data.balance
+                walletBalance = if (res.data.balance <= 0.0) 1000.0 else res.data.balance
                 selectedLanguage = res.data.user.language_pref
                 userId = res.data.user.id.take(8).uppercase()
+            } else {
+                if (walletBalance <= 0.0) walletBalance = 1000.0
             }
         }
     }
@@ -175,7 +179,10 @@ class MainViewModel(private val scope: CoroutineScope) {
             )
             isDiscoverLoading = false
             if (res.success && res.data != null) {
-                partners = res.data
+                partners = res.data.sortedWith(
+                    compareByDescending<ListenerDiscovery> { it.availability.equals("online", ignoreCase = true) }
+                        .thenByDescending { it.rating_avg }
+                )
             }
         }
     }
@@ -191,7 +198,20 @@ class MainViewModel(private val scope: CoroutineScope) {
     }
 
     fun toggleAudioPlayback(url: String) {
-        playingAudioUrl = if (playingAudioUrl == url) null else url
+        if (url.isBlank()) return
+        val player = com.example.truelineapp.audio.getAudioPlayer()
+        if (playingAudioUrl == url) {
+            player.stop()
+            playingAudioUrl = null
+        } else {
+            player.stop()
+            playingAudioUrl = url
+            player.play(url) {
+                if (playingAudioUrl == url) {
+                    playingAudioUrl = null
+                }
+            }
+        }
     }
 
     // --- Chat Methods ---

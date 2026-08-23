@@ -14,8 +14,8 @@ class ZegoCallActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val appId = intent.getLongExtra("APP_ID", 123456789L)
-        val appSign = intent.getStringExtra("APP_SIGN") ?: "zegocloud_secret_32_bytes_long!"
+        val appId = intent.getLongExtra("APP_ID", 628007464L)
+        val appSign = intent.getStringExtra("APP_SIGN") ?: "e7dffb8a9cb6a89f1fc2afddcc16f4ce4df9cd1e8ca346076161caf69cbd465e"
         val userId = intent.getStringExtra("USER_ID") ?: ("user_" + System.currentTimeMillis())
         val userName = intent.getStringExtra("USER_NAME") ?: "User"
         val callId = intent.getStringExtra("CALL_ID") ?: ("call_" + System.currentTimeMillis())

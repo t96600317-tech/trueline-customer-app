@@ -29,7 +29,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavType
@@ -113,9 +115,7 @@ fun App() {
                         isChatListLoading = viewModel.isChatListLoading,
                         playingAudioUrl = viewModel.playingAudioUrl,
                         onChatClick = { partner ->
-                            val photoUrlEncoded = partner.partner_photo_url.ifBlank { "none" }
-                            val titleEncoded = partner.partner_title.ifBlank { "none" }
-                            navController.navigate("chat_detail/${partner.partner_id}/${partner.partner_name}/$titleEncoded/$photoUrlEncoded")
+                            navController.navigate("chat_detail/${partner.partner_id}")
                         },
                         onNavigateToWallet = {
                             navController.navigate("wallet")
@@ -133,9 +133,21 @@ fun App() {
                         onPlayAudio = { viewModel.toggleAudioPlayback(it) },
                         onConnectToListener = { listenerId ->
                             val partner = viewModel.partners.find { it.id == listenerId }
-                            val name = partner?.name ?: "Listener"
+                            val partnerName = partner?.name ?: "Listener"
+                            val roomId = "call_${listenerId.replace("-", "").take(16)}"
                             viewModel.connectToListener(listenerId)
-                            navController.navigate("audio_call/$name")
+                            com.example.truelineapp.call.getCallService().startAudioCall(
+                                roomId = roomId,
+                                targetUserId = listenerId,
+                                targetUserName = partnerName,
+                                token = "",
+                                onCallEnd = {
+                                    viewModel.onCallFinished(180)
+                                    navController.navigate("post_call_rating") {
+                                        popUpTo("main/0") { inclusive = false }
+                                    }
+                                }
+                            )
                         },
                         onLogout = {
                             viewModel.logout {
@@ -160,16 +172,19 @@ fun App() {
                     )
                 }
                 composable(
-                    route = "audio_call/{name}",
-                    arguments = listOf(navArgument("name") { type = NavType.StringType })
+                    route = "audio_call/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
+                    val id = backStackEntry.arguments?.getString("id") ?: ""
+                    val name = viewModel.partners.find { it.id == id }?.name 
+                        ?: viewModel.currentCallingPartner?.name 
+                        ?: "Listener"
                     AudioCallScreen(
                         listenerName = name,
                         onHangUp = {
                             viewModel.onCallFinished(180)
                             navController.navigate("post_call_rating") {
-                                popUpTo("audio_call/{name}") { inclusive = true }
+                                popUpTo("audio_call/{id}") { inclusive = true }
                             }
                         }
                     )
@@ -191,33 +206,55 @@ fun App() {
                     )
                 }
                 composable(
-                    route = "chat_detail/{id}/{name}/{title}/{photoUrl}",
+                    route = "chat_detail/{id}",
                     arguments = listOf(
-                        navArgument("id") { type = NavType.StringType },
-                        navArgument("name") { type = NavType.StringType },
-                        navArgument("title") { type = NavType.StringType },
-                        navArgument("photoUrl") { type = NavType.StringType }
+                        navArgument("id") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val id = backStackEntry.arguments?.getString("id") ?: ""
-                    val name = backStackEntry.arguments?.getString("name") ?: ""
-                    val title = backStackEntry.arguments?.getString("title") ?: ""
-                    val photoUrl = backStackEntry.arguments?.getString("photoUrl") ?: ""
+                    val partner = viewModel.partners.find { it.id == id }
+                        ?: viewModel.conversations.find { it.partner_id == id }?.let {
+                            ListenerDiscovery(
+                                id = it.partner_id,
+                                name = it.partner_name,
+                                title = it.partner_title,
+                                photo_url = it.partner_photo_url,
+                                availability = it.partner_availability
+                            )
+                        }
+                    val name = partner?.name ?: "Listener"
+                    val title = partner?.title ?: ""
+                    val photoUrl = partner?.photo_url ?: ""
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
-                        partnerTitle = if (title == "none") "" else title,
-                        partnerPhotoUrl = if (photoUrl == "none") "" else photoUrl,
+                        partnerTitle = title,
+                        partnerPhotoUrl = photoUrl,
                         messagesList = viewModel.currentChatMessages,
                         isLoading = viewModel.isChatMessagesLoading,
                         onLoadMessages = { viewModel.openChatRoom(id) },
                         onSendMessage = { content -> viewModel.sendChatMessage(id, content) },
                         onCallClick = {
+                            val roomId = "call_${id.replace("-", "").take(16)}"
                             viewModel.connectToListener(id)
-                            navController.navigate("audio_call/$name")
+                            com.example.truelineapp.call.getCallService().startAudioCall(
+                                roomId = roomId,
+                                targetUserId = id,
+                                targetUserName = name,
+                                token = "",
+                                onCallEnd = {
+                                    viewModel.onCallFinished(180)
+                                    navController.navigate("post_call_rating") {
+                                        popUpTo("main/0") { inclusive = false }
+                                    }
+                                }
+                            )
                         },
                         onBack = {
-                            navController.popBackStack()
+                            navController.navigate("main/1") {
+                                popUpTo("main/0") { inclusive = false }
+                                launchSingleTop = true
+                            }
                         }
                     )
                 }
@@ -260,11 +297,263 @@ fun MainScreen(
     var showAddCoinsSheet by remember { mutableStateOf(false) }
     var pendingListenerName by remember { mutableStateOf("") }
     var showLanguageSheet by remember { mutableStateOf(false) }
+    var selectedProfilePartner by remember { mutableStateOf<ListenerDiscovery?>(null) }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(initialTab) }
 
+    LaunchedEffect(Unit) {
+        onSearchChanged(searchQueryInitial)
+    }
+
     LaunchedEffect(searchQueryInitial) {
         searchQuery = searchQueryInitial
+    }
+
+    // Middle Screen Popup Dialog for Listener Profile Details & Actions (Call / Message)
+    if (selectedProfilePartner != null) {
+        val partner = selectedProfilePartner!!
+        Dialog(onDismissRequest = { selectedProfilePartner = null }) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .padding(horizontal = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                shadowElevation = 8.dp
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(22.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Close icon button at top right
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        IconButton(
+                            onClick = { selectedProfilePartner = null },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Text("✕", fontSize = 16.sp, color = TextSecondary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Circular Avatar with Live Online/Offline Badge
+                    Box(
+                        modifier = Modifier.size(90.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(82.dp),
+                            shape = CircleShape,
+                            color = SurfaceElevated,
+                            border = BorderStroke(2.dp, BorderSubtle),
+                            shadowElevation = 2.dp
+                        ) {
+                            ListenerAvatar(
+                                name = partner.name,
+                                modifier = Modifier.fillMaxSize(),
+                                fontSize = 32.sp,
+                                backgroundColor = Primary.copy(alpha = 0.12f),
+                                textColor = Primary
+                            )
+                        }
+
+                        val isOnline = partner.availability.equals("online", ignoreCase = true)
+                        Surface(
+                            color = if (isOnline) OnlineSuccess else Color(0xFF94A3B8),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 2.dp, y = (-2).dp)
+                        ) {
+                            Text(
+                                text = if (isOnline) "ONLINE" else "OFFLINE",
+                                color = Color.White,
+                                fontSize = 8.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Name
+                    Text(
+                        text = partner.name,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary
+                    )
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    // Title
+                    if (partner.title.isNotBlank()) {
+                        Text(
+                            text = partner.title,
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    // Languages
+                    if (partner.languages.isNotEmpty()) {
+                        Text(
+                            text = "🗣 " + partner.languages.joinToString(", "),
+                            fontSize = 12.sp,
+                            color = TextMuted,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    // Rating & Rate Info
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            color = SurfaceElevated,
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, BorderSubtle)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Accent, modifier = Modifier.size(13.dp))
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Text(
+                                    text = "${partner.rating_avg} (${partner.rating_count} reviews)",
+                                    fontSize = 11.5.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+
+                        Surface(
+                            color = Accent.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(
+                                text = "🪙 ${partner.rate_per_min}/min",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Accent,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    // Bio Description if available
+                    if (partner.bio.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = partner.bio,
+                            fontSize = 12.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 16.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Action Buttons: Message & Call
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Message Button
+                        Button(
+                            onClick = {
+                                val p = partner
+                                selectedProfilePartner = null
+                                onChatClick(ChatConversationData(
+                                    partner_id = p.id,
+                                    partner_name = p.name,
+                                    partner_title = p.title,
+                                    partner_photo_url = p.photo_url,
+                                    partner_availability = p.availability,
+                                    last_message = "",
+                                    last_message_sender = "",
+                                    last_message_time = "",
+                                    unread_count = 0
+                                ))
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = SurfaceElevated
+                            ),
+                            border = BorderStroke(1.2.dp, BorderSubtle)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text("💬", fontSize = 16.sp)
+                                Text(
+                                    text = "Message",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
+                        }
+
+                        // Call Button
+                        Button(
+                            onClick = {
+                                val p = partner
+                                selectedProfilePartner = null
+                                if (walletBalance >= p.rate_per_min) {
+                                    onConnectToListener(p.id)
+                                } else {
+                                    pendingListenerName = p.name
+                                    showAddCoinsSheet = true
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Accent
+                            )
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = "Call",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Call",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if (showAddCoinsSheet) {
@@ -290,84 +579,127 @@ fun MainScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                   Row(verticalAlignment = Alignment.CenterVertically) {
-                       TrueLineLogo(size = 32.dp)
-                       Spacer(modifier = Modifier.width(8.dp))
-                       TrueLineBrandText(fontSize = 22.sp)
-                   }
-                },
-                actions = {
-                    Surface(
-                        onClick = onNavigateToWallet, 
-                        shape = RoundedCornerShape(20.dp),
-                        color = Color.White.copy(alpha = 0.15f),
-                        modifier = Modifier.padding(end = 16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CoinLogo(size = 18.dp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(walletBalance.toString(), fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = TrueLinePrimary)
-            )
-        },
-        bottomBar = {
-            NavigationBar(
-                containerColor = Color.White,
-                tonalElevation = 8.dp
+            Surface(
+                color = SurfaceWhite,
+                shadowElevation = 2.dp,
+                border = BorderStroke(1.dp, BorderSubtle)
             ) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(if (selectedTab == 0) Icons.Filled.Call else Icons.Outlined.Call, null) },
-                    label = { Text("Call") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TrueLinePrimary,
-                        selectedTextColor = TrueLinePrimary,
-                        indicatorColor = TrueLinePrimary.copy(alpha = 0.1f)
-                    )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { 
-                        Icon(
-                            imageVector = if (selectedTab == 1) 
-                                Icons.AutoMirrored.Filled.Chat 
-                            else 
-                                Icons.AutoMirrored.Outlined.Chat, 
-                            contentDescription = "Chat"
-                        ) 
+                TopAppBar(
+                    title = {
+                        TrueLineBrandHeader(
+                            logoSize = 34.dp,
+                            titleSize = 20.sp
+                        )
                     },
-                    label = { Text("Chat") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TrueLinePrimary,
-                        selectedTextColor = TrueLinePrimary,
-                        indicatorColor = TrueLinePrimary.copy(alpha = 0.1f)
-                    )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 2,
-                    onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Outlined.Person, null) }, 
-                    label = { Text("Profile") },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = TrueLinePrimary,
-                        selectedTextColor = TrueLinePrimary,
-                        indicatorColor = TrueLinePrimary.copy(alpha = 0.1f)
+                    actions = {
+                        Surface(
+                            onClick = onNavigateToWallet,
+                            shape = RoundedCornerShape(20.dp),
+                            color = SurfaceElevated,
+                            border = BorderStroke(1.dp, BorderSubtle),
+                            modifier = Modifier.padding(end = 16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CoinLogo(size = 18.dp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = walletBalance.toString(),
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary,
+                                    fontSize = 14.sp
+                                )
+                            }
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = SurfaceWhite,
+                        titleContentColor = TextPrimary
                     )
                 )
             }
+        },
+        bottomBar = {
+            Surface(
+                color = SurfaceWhite,
+                shadowElevation = 8.dp,
+                border = BorderStroke(1.dp, Color(0xFFF1F5F9))
+            ) {
+                NavigationBar(
+                    containerColor = SurfaceWhite,
+                    tonalElevation = 0.dp
+                ) {
+                    val totalUnread = conversations.sumOf { it.unread_count }
+
+                    NavigationBarItem(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        icon = { Icon(if (selectedTab == 0) Icons.Filled.Call else Icons.Outlined.Call, contentDescription = "Call") },
+                        label = { Text("Call", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Primary,
+                            selectedTextColor = Primary,
+                            unselectedIconColor = TextMuted,
+                            unselectedTextColor = TextMuted,
+                            indicatorColor = Primary.copy(alpha = 0.08f)
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        icon = {
+                            if (totalUnread > 0) {
+                                BadgedBox(
+                                    badge = {
+                                        Badge(
+                                            containerColor = Danger,
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(totalUnread.toString())
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = if (selectedTab == 1) Icons.AutoMirrored.Filled.Chat else Icons.AutoMirrored.Outlined.Chat,
+                                        contentDescription = "Chat"
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    imageVector = if (selectedTab == 1) Icons.AutoMirrored.Filled.Chat else Icons.AutoMirrored.Outlined.Chat,
+                                    contentDescription = "Chat"
+                                )
+                            }
+                        },
+                        label = { Text("Chat", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Primary,
+                            selectedTextColor = Primary,
+                            unselectedIconColor = TextMuted,
+                            unselectedTextColor = TextMuted,
+                            indicatorColor = Primary.copy(alpha = 0.08f)
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = selectedTab == 2,
+                        onClick = { selectedTab = 2 },
+                        icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
+                        label = { Text("Profile", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Primary,
+                            selectedTextColor = Primary,
+                            unselectedIconColor = TextMuted,
+                            unselectedTextColor = TextMuted,
+                            indicatorColor = Primary.copy(alpha = 0.08f)
+                        )
+                    )
+                }
+            }
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize().background(TrueLineLightBg)) {
+        Column(modifier = Modifier.padding(padding).fillMaxSize().background(Light)) {
             when (selectedTab) {
                 0 -> {
                     // Search Bar
@@ -377,20 +709,21 @@ fun MainScreen(
                             searchQuery = it
                             onSearchChanged(it)
                         },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                        placeholder = { Text("Search name") },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
-                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        placeholder = { Text("Search listeners by name or language...", color = TextMuted, fontSize = 14.sp) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
+                        shape = RoundedCornerShape(14.dp),
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color.LightGray,
-                            unfocusedBorderColor = Color.LightGray.copy(alpha = 0.5f),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedTextColor = TrueLineDarkBg,
-                            unfocusedTextColor = TrueLineDarkBg,
-                            focusedPlaceholderColor = Color.Gray,
-                            unfocusedPlaceholderColor = Color.Gray
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = BorderSubtle,
+                            focusedContainerColor = SurfaceWhite,
+                            unfocusedContainerColor = SurfaceWhite,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            cursorColor = Primary
                         )
                     )
 
@@ -401,21 +734,28 @@ fun MainScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(languages) { lang ->
+                            val isSelected = selectedDiscoverLanguage == lang
                             FilterChip(
-                                selected = selectedDiscoverLanguage == lang,
+                                selected = isSelected,
                                 onClick = { onDiscoverLanguageSelected(lang) },
-                                label = { Text(lang, fontWeight = if (selectedDiscoverLanguage == lang) FontWeight.Bold else FontWeight.Normal) },
+                                label = {
+                                    Text(
+                                        text = lang,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                    )
+                                },
                                 colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = TrueLinePrimary,
+                                    selectedContainerColor = Primary,
                                     selectedLabelColor = Color.White,
-                                    containerColor = Color.White,
-                                    labelColor = Color.Gray
+                                    containerColor = SurfaceWhite,
+                                    labelColor = TextSecondary
                                 ),
                                 border = FilterChipDefaults.filterChipBorder(
                                     enabled = true,
-                                    selected = selectedDiscoverLanguage == lang,
-                                    borderColor = Color.LightGray,
-                                    selectedBorderColor = TrueLinePrimary,
+                                    selected = isSelected,
+                                    borderColor = BorderSubtle,
+                                    selectedBorderColor = Primary,
                                     borderWidth = 1.dp,
                                     selectedBorderWidth = 1.dp
                                 ),
@@ -432,24 +772,14 @@ fun MainScreen(
                     } else {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            contentPadding = PaddingValues(bottom = 16.dp, top = 4.dp)
                         ) {
                             items(partners) { partner ->
                                 ExactReplicaCard(
                                     partner = partner, 
                                     isPlaying = playingAudioUrl == partner.audio_sample_url,
                                     onCardClick = { 
-                                        onChatClick(ChatConversationData(
-                                            partner_id = partner.id,
-                                            partner_name = partner.name,
-                                            partner_title = partner.title,
-                                            partner_photo_url = partner.photo_url,
-                                            partner_availability = partner.availability,
-                                            last_message = "",
-                                            last_message_sender = "",
-                                            last_message_time = "",
-                                            unread_count = 0
-                                        ))
+                                        selectedProfilePartner = partner
                                     },
                                     onPlayClick = { onPlayAudio(partner.audio_sample_url) },
                                     onConnectClick = {
@@ -504,9 +834,10 @@ fun ExactReplicaCard(
         onClick = onCardClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        color = Color.White,
-        shape = RoundedCornerShape(24.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        color = SurfaceWhite,
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, BorderSubtle),
         shadowElevation = 2.dp
     ) {
         Row(
@@ -517,62 +848,63 @@ fun ExactReplicaCard(
         ) {
             // LEFT: Circular Avatar Section
             Box(
-                modifier = Modifier.size(110.dp),
+                modifier = Modifier.size(100.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Circular Image with White Border
+                // Circular Image / Avatar with subtle border
                 Surface(
-                    modifier = Modifier.size(100.dp),
+                    modifier = Modifier.size(92.dp),
                     shape = CircleShape,
-                    color = TrueLineLightBg,
-                    border = BorderStroke(2.dp, Color.White),
-                    shadowElevation = 4.dp
+                    color = SurfaceElevated,
+                    border = BorderStroke(2.dp, BorderSubtle),
+                    shadowElevation = 2.dp
                 ) {
-                    Image(
-                        painter = painterResource(Res.drawable.profile_girl),
-                        contentDescription = null,
+                    ListenerAvatar(
+                        name = partner.name,
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        fontSize = 34.sp,
+                        backgroundColor = Primary.copy(alpha = 0.12f),
+                        textColor = Primary
                     )
                 }
 
-                // ONLINE Badge (Top Right Position)
-                if (partner.availability == "online") {
-                    Surface(
-                        color = TrueLineOnline,
-                        shape = RoundedCornerShape(4.dp),
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = (-2).dp, y = 2.dp)
-                    ) {
-                        Text(
-                            "ONLINE",
-                            color = Color.White,
-                            fontSize = 8.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
+                // Availability Badge (ONLINE / OFFLINE)
+                val isOnline = partner.availability.equals("online", ignoreCase = true)
+                Surface(
+                    color = if (isOnline) OnlineSuccess else Color(0xFF94A3B8),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .offset(x = 2.dp, y = (-2).dp)
+                ) {
+                    Text(
+                        text = if (isOnline) "ONLINE" else "OFFLINE",
+                        color = Color.White,
+                        fontSize = 8.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
                 }
 
                 // Rating Badge (Bottom Position)
                 Surface(
-                    color = TrueLineDarkBg,
+                    color = SurfaceElevated,
                     shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, BorderSubtle),
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .offset(y = 4.dp)
+                        .offset(y = 6.dp)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.Star, null, tint = TrueLineAccent, modifier = Modifier.size(10.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Default.Star, contentDescription = null, tint = Accent, modifier = Modifier.size(11.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "${partner.rating_avg} (${partner.rating_count})", 
-                            color = Color.White, 
-                            fontSize = 10.sp, 
+                            color = TextPrimary, 
+                            fontSize = 10.5.sp, 
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -593,29 +925,31 @@ fun ExactReplicaCard(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = partner.name,
-                            fontSize = 22.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TrueLineDarkBg
+                            color = TextPrimary
                         )
                         Text(
                             text = partner.title,
-                            fontSize = 15.sp,
-                            color = Color.Gray
+                            fontSize = 13.5.sp,
+                            color = TextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                     
                     IconButton(
                         onClick = onPlayClick,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
-                            .background(TrueLineLightBg)
+                            .background(Primary.copy(alpha = 0.08f))
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            tint = TrueLinePrimary,
-                            modifier = Modifier.size(16.dp)
+                            contentDescription = "Play voice intro",
+                            tint = Primary,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -627,27 +961,27 @@ fun ExactReplicaCard(
                     Icon(
                         imageVector = Icons.Default.Search, 
                         contentDescription = null,
-                        tint = Color.Gray,
-                        modifier = Modifier.size(14.dp)
+                        tint = TextMuted,
+                        modifier = Modifier.size(13.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = partner.languages.joinToString(", "),
-                        fontSize = 13.sp,
-                        color = Color.Gray,
+                        fontSize = 12.5.sp,
+                        color = TextSecondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Connect Button (Amber)
+                // Connect Button (Amber CTA)
                 Surface(
                     onClick = onConnectClick,
-                    modifier = Modifier.fillMaxWidth().height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    color = TrueLineAccent 
+                    modifier = Modifier.fillMaxWidth().height(44.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = Accent
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp).fillMaxSize(),
@@ -658,25 +992,25 @@ fun ExactReplicaCard(
                             Icon(
                                 imageVector = Icons.Default.Call,
                                 contentDescription = null,
-                                tint = TrueLineDarkBg,
-                                modifier = Modifier.size(16.dp)
+                                tint = Dark,
+                                modifier = Modifier.size(15.dp)
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Connect",
-                                color = TrueLineDarkBg,
-                                fontSize = 15.sp,
+                                color = Dark,
+                                fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
 
                         // Rate Pill with Coin Logo
                         Surface(
-                            color = Color.Black.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(12.dp)
+                            color = Color.Black.copy(alpha = 0.16f),
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 CoinLogo(size = 12.dp)
@@ -684,7 +1018,7 @@ fun ExactReplicaCard(
                                 Text(
                                     text = "${partner.rate_per_min.toInt()}/min",
                                     color = Color.White,
-                                    fontSize = 12.sp,
+                                    fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }

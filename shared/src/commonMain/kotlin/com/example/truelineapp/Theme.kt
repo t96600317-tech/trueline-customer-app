@@ -16,6 +16,21 @@ val TrueLineLightBg = Color(0xFFF4F8F9)   // Light Background: Main app screens
 val TrueLineOnline = Color(0xFF3FBFAD)    // Online Green: Indicators, verified badges, success
 val TrueLineTextSecondary = Color(0xFF64748B) // Muted Secondary Text
 
+// UI Component Tokens (matching trueline_listener design system)
+val PrimaryDim = Color(0xFF245658)
+val AccentDisabled = Color(0xFFFADBB3)
+val DarkSurface = Color(0xFF16232C)
+val OnlineSuccess = Color(0xFF3FBFAD)
+val Danger = Color(0xFFE65D5D)
+val SurfaceWhite = Color(0xFFFFFFFF)
+val SurfaceElevated = Color(0xFFEDF4F6)
+val BorderSubtle = Color(0xFFE2EAEB)
+val TextPrimary = Color(0xFF0F1B22)
+val TextSecondary = Color(0xFF4E6167)
+val TextMuted = Color(0xFF8A9BA0)
+val TextMutedGrey = Color(0xFF5A6E72)
+val TextResendMuted = Color(0xFF8A9BA0)
+
 // Legacy Aliases for safety (internal use)
 val Primary = TrueLinePrimary
 val Secondary = TrueLineSecondary
