@@ -146,6 +146,14 @@ class MainViewModel(private val scope: CoroutineScope) {
                 walletBalance = if (res.data.balance <= 0.0) 1000.0 else res.data.balance
                 selectedLanguage = res.data.user.language_pref
                 userId = res.data.user.id.take(8).uppercase()
+                try {
+                    com.example.truelineapp.call.getCallService().initialize(
+                        628007464L,
+                        "e7dffb8a9cb6a89f1fc2afddcc16f4ce4df9cd1e8ca346076161caf69cbd465e",
+                        res.data.user.id,
+                        "User #${userId}"
+                    )
+                } catch (e: Exception) {}
             } else {
                 if (walletBalance <= 0.0) walletBalance = 1000.0
             }
