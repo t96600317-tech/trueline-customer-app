@@ -54,6 +54,16 @@ fun App() {
 
     TrueLineTheme {
         val navController = rememberNavController()
+
+        LaunchedEffect(viewModel.showPostCallRating) {
+            if (viewModel.showPostCallRating) {
+                try {
+                    navController.navigate("post_call_rating") {
+                        popUpTo("main/0") { inclusive = false }
+                    }
+                } catch (e: Exception) {}
+            }
+        }
         
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -143,9 +153,6 @@ fun App() {
                                 token = "",
                                 onCallEnd = {
                                     viewModel.onCallFinished(180)
-                                    navController.navigate("post_call_rating") {
-                                        popUpTo("main/0") { inclusive = false }
-                                    }
                                 }
                             )
                         },
@@ -244,9 +251,6 @@ fun App() {
                                 token = "",
                                 onCallEnd = {
                                     viewModel.onCallFinished(180)
-                                    navController.navigate("post_call_rating") {
-                                        popUpTo("main/0") { inclusive = false }
-                                    }
                                 }
                             )
                         },
