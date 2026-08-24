@@ -130,7 +130,9 @@ fun IndividualChatScreen(
             Surface(
                 shadowElevation = 8.dp,
                 color = Color.White,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
             ) {
                 Row(
                     modifier = Modifier
