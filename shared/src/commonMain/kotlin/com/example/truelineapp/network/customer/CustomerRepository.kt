@@ -351,7 +351,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { baseUrl ->
-                client.get("$baseUrl/chat/conversations") {
+                client.get("$baseUrl/chats") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -364,7 +364,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { baseUrl ->
-                client.get("$baseUrl/chat/conversations/$partnerId/messages") {
+                client.get("$baseUrl/chats/$partnerId/messages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                 }.body()
             }
@@ -377,7 +377,7 @@ class CustomerRepository(
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {
             executeWithFallback { baseUrl ->
-                client.post("$baseUrl/chat/conversations/$partnerId/messages") {
+                client.post("$baseUrl/chats/$partnerId/messages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
                     setBody(mapOf("content" to content))
