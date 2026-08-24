@@ -249,11 +249,27 @@ class MainViewModel(private val scope: CoroutineScope) {
     }
 
     fun sendChatMessage(partnerId: String, content: String) {
-        if (content.isBlank()) return
+        val trimmed = content.trim()
+        if (trimmed.isBlank()) return
+        
+        val tempId = "temp_${System.currentTimeMillis()}"
+        val tempMsg = ChatMessageData(
+            id = tempId,
+            user_id = userId,
+            partner_id = partnerId,
+            sender_type = "user",
+            content = trimmed,
+            created_at = getCurrentTimeFormatted()
+        )
+        currentChatMessages.add(tempMsg)
+
         scope.launch {
-            val res = repository.sendChatMessage(partnerId, content)
+            val res = repository.sendChatMessage(partnerId, trimmed)
             if (res.success && res.data != null) {
-                currentChatMessages.add(res.data)
+                val index = currentChatMessages.indexOfFirst { it.id == tempId }
+                if (index != -1) {
+                    currentChatMessages[index] = res.data
+                }
                 fetchConversations()
             }
         }

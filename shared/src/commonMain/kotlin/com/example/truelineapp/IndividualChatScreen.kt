@@ -145,10 +145,17 @@ fun IndividualChatScreen(
                         value = textState,
                         onValueChange = { textState = it },
                         placeholder = { Text("Type a message...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontSize = 14.5.sp,
+                            color = TrueLineDarkBg,
+                            fontWeight = FontWeight.Medium
+                        ),
                         modifier = Modifier
                             .weight(1f)
                             .heightIn(min = 46.dp),
                         colors = TextFieldDefaults.colors(
+                            focusedTextColor = TrueLineDarkBg,
+                            unfocusedTextColor = TrueLineDarkBg,
                             focusedContainerColor = Color(0xFFF1F5F9),
                             unfocusedContainerColor = Color(0xFFF1F5F9),
                             disabledContainerColor = Color(0xFFF1F5F9),
@@ -267,9 +274,10 @@ fun IndividualChatScreen(
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Text(
-                                        text = if (msg.created_at.length >= 16) msg.created_at.substring(11, 16) else "",
-                                        color = if (isFromUser) Color.White.copy(alpha = 0.7f) else Color.Gray,
-                                        fontSize = 10.sp,
+                                        text = formatTimestamp(msg.created_at),
+                                        color = if (isFromUser) Color.White.copy(alpha = 0.75f) else Color(0xFF64748B),
+                                        fontSize = 10.5.sp,
+                                        fontWeight = FontWeight.Medium,
                                         modifier = Modifier.align(Alignment.End)
                                     )
                                 }
