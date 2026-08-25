@@ -55,6 +55,16 @@ fun App() {
     TrueLineTheme {
         val navController = rememberNavController()
 
+        LaunchedEffect(viewModel.isAuthSuccess) {
+            if (viewModel.isAuthSuccess) {
+                try {
+                    navController.navigate("main/0") {
+                        popUpTo("onboarding") { inclusive = true }
+                    }
+                } catch (e: Exception) {}
+            }
+        }
+
         LaunchedEffect(viewModel.showPostCallRating) {
             if (viewModel.showPostCallRating) {
                 try {

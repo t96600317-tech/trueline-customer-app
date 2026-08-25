@@ -82,6 +82,14 @@ class CustomerRepository(
         return authToken
     }
 
+    fun savePhone(phone: String) {
+        storage.savePhone(phone)
+    }
+
+    fun getSavedPhone(): String? {
+        return storage.getPhone()
+    }
+
     fun clearAuthSession() {
         authToken = null
         storage.clearSession()

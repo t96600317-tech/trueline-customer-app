@@ -9,7 +9,7 @@ class AndroidCustomerSessionStorage(private val context: Context) : SessionStora
     }
 
     override fun saveAuthToken(token: String) {
-        prefs.edit().putString("auth_token", token).apply()
+        prefs.edit().putString("auth_token", token).commit()
     }
 
     override fun getAuthToken(): String? {
@@ -17,7 +17,7 @@ class AndroidCustomerSessionStorage(private val context: Context) : SessionStora
     }
 
     override fun savePhone(phone: String) {
-        prefs.edit().putString("saved_phone", phone).apply()
+        prefs.edit().putString("saved_phone", phone).commit()
     }
 
     override fun getPhone(): String? {
@@ -25,7 +25,7 @@ class AndroidCustomerSessionStorage(private val context: Context) : SessionStora
     }
 
     override fun saveLanguage(language: String) {
-        prefs.edit().putString("selected_lang", language).apply()
+        prefs.edit().putString("selected_lang", language).commit()
     }
 
     override fun getLanguage(): String? {
@@ -33,7 +33,7 @@ class AndroidCustomerSessionStorage(private val context: Context) : SessionStora
     }
 
     override fun clearSession() {
-        prefs.edit().clear().apply()
+        prefs.edit().clear().commit()
     }
 }
 

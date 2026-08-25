@@ -72,9 +72,11 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     private fun checkAutoLogin() {
         val token = repository.getAuthToken()
+        val phone = repository.getSavedPhone()
         if (!token.isNullOrBlank()) {
             authToken = token
             isAuthSuccess = true
+            currentPhoneNumber = phone ?: ""
             fetchUserProfile()
             fetchListeners()
             fetchConversations()
