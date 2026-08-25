@@ -1,5 +1,6 @@
 package com.example.truelineapp
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,8 +9,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChatBubbleOutline
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
@@ -18,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -124,32 +130,65 @@ fun ChatListScreen(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Search Bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search chats...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = Color.Gray,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = TrueLinePrimary.copy(alpha = 0.5f),
-                        unfocusedBorderColor = Color(0xFFE2E8F0),
-                        focusedContainerColor = Color(0xFFF8FAFC),
-                        unfocusedContainerColor = Color(0xFFF8FAFC),
-                        cursorColor = TrueLinePrimary
-                    ),
+                // Clean Modern Search Bar
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFFF1F5F9),
+                    border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp)
-                )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = "Search",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        BasicTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                fontSize = 14.5.sp,
+                                color = TrueLineDarkBg,
+                                fontWeight = FontWeight.Normal
+                            ),
+                            cursorBrush = SolidColor(TrueLinePrimary),
+                            modifier = Modifier.weight(1f),
+                            decorationBox = { innerTextField ->
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Search chats or listeners...",
+                                        fontSize = 14.sp,
+                                        color = Color(0xFF94A3B8)
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        )
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(
+                                onClick = { searchQuery = "" },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Clear",
+                                    tint = Color(0xFF94A3B8),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -184,34 +223,13 @@ fun ChatListScreen(
                                     .clickable { onChatClick(listener) }
                                     .padding(4.dp)
                             ) {
-                                Box(
+                                ListenerAvatar(
+                                    name = listener.displayName,
+                                    isOnline = true,
+                                    fontSize = 18.sp,
                                     modifier = Modifier.size(54.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = TrueLinePrimary.copy(alpha = 0.12f),
-                                        border = androidx.compose.foundation.BorderStroke(2.dp, TrueLineOnline),
-                                        modifier = Modifier.fillMaxSize()
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text(
-                                                text = listener.displayName.take(1).uppercase(),
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 18.sp,
-                                                color = TrueLinePrimary
-                                            )
-                                        }
-                                    }
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = TrueLineOnline,
-                                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
-                                        modifier = Modifier
-                                            .size(13.dp)
-                                            .align(Alignment.BottomEnd)
-                                    ) {}
-                                }
+                                    badgeSize = 13.dp
+                                )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text = listener.displayName.split(" ").firstOrNull() ?: listener.displayName,
@@ -306,20 +324,21 @@ fun ChatListScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp)
+                contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp)
             ) {
                 items(filteredConversations) { chat ->
                     Surface(
                         onClick = { onChatClick(chat) },
-                        color = Color.White
+                        shape = RoundedCornerShape(18.dp),
+                        color = Color.White,
+                        border = BorderStroke(1.dp, Color(0xFFF1F5F9)),
+                        shadowElevation = 1.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 5.dp)
                     ) {
                         ChatItem(chat)
                     }
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 82.dp, end = 20.dp),
-                        thickness = 0.8.dp,
-                        color = Color(0xFFF1F5F9)
-                    )
                 }
             }
         }
@@ -328,43 +347,22 @@ fun ChatListScreen(
 
 @Composable
 fun ChatItem(chat: ChatConversationData) {
+    val isOnline = chat.displayAvailability.equals("online", ignoreCase = true)
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Listener Avatar Box
-        Box(
+        // Listener Rich Gradient Avatar
+        ListenerAvatar(
+            name = chat.displayName,
+            isOnline = isOnline,
+            fontSize = 20.sp,
             modifier = Modifier.size(52.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Surface(
-                shape = CircleShape,
-                color = TrueLinePrimary.copy(alpha = 0.10f),
-                border = androidx.compose.foundation.BorderStroke(1.dp, TrueLinePrimary.copy(alpha = 0.15f)),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = chat.displayName.take(1).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = TrueLinePrimary
-                    )
-                }
-            }
-            if (chat.displayAvailability.equals("online", ignoreCase = true)) {
-                Surface(
-                    shape = CircleShape,
-                    color = TrueLineOnline,
-                    border = androidx.compose.foundation.BorderStroke(2.dp, Color.White),
-                    modifier = Modifier
-                        .size(14.dp)
-                        .align(Alignment.BottomEnd)
-                ) {}
-            }
-        }
+            badgeSize = 14.dp
+        )
 
         Spacer(modifier = Modifier.width(14.dp))
 
@@ -379,21 +377,25 @@ fun ChatItem(chat: ChatConversationData) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = chat.displayName,
-                    fontSize = 15.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TrueLineDarkBg,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(
+                        text = chat.displayName,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = TrueLineDarkBg,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 if (chat.last_message_time.isNotBlank()) {
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = formatTimestamp(chat.last_message_time),
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         color = if (chat.unread_count > 0) TrueLinePrimary else Color(0xFF94A3B8),
                         fontWeight = if (chat.unread_count > 0) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
@@ -404,27 +406,42 @@ fun ChatItem(chat: ChatConversationData) {
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Bottom Row: Message preview + Unread Badge
+            // Bottom Row: Message preview / Subtitle + Unread Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                val isSentByUser = chat.last_message_sender.equals("user", ignoreCase = true)
                 val previewText = when {
-                    chat.last_message.isNotBlank() -> chat.last_message
+                    chat.last_message.isNotBlank() -> if (isSentByUser) "You: ${chat.last_message}" else chat.last_message
                     chat.displayTitle.isNotBlank() -> chat.displayTitle
                     else -> "Tap to start conversation"
                 }
 
-                Text(
-                    text = previewText,
-                    fontSize = 13.sp,
-                    color = if (chat.unread_count > 0) TrueLineDarkBg else Color(0xFF64748B),
-                    fontWeight = if (chat.unread_count > 0) FontWeight.SemiBold else FontWeight.Normal,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isSentByUser && chat.last_message.isNotBlank()) {
+                        Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = "Sent",
+                            tint = Color(0xFF64748B),
+                            modifier = Modifier
+                                .size(14.dp)
+                                .padding(end = 3.dp)
+                        )
+                    }
+                    Text(
+                        text = previewText,
+                        fontSize = 13.5.sp,
+                        color = if (chat.unread_count > 0) TrueLineDarkBg else Color(0xFF64748B),
+                        fontWeight = if (chat.unread_count > 0) FontWeight.SemiBold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 if (chat.unread_count > 0) {
                     Spacer(modifier = Modifier.width(8.dp))
