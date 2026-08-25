@@ -42,8 +42,8 @@ fun ChatListScreen(
     val filteredConversations = remember(conversations, searchQuery) {
         if (searchQuery.isBlank()) conversations
         else conversations.filter {
-            it.partner_name.contains(searchQuery, ignoreCase = true) ||
-            it.partner_title.contains(searchQuery, ignoreCase = true) ||
+            it.displayName.contains(searchQuery, ignoreCase = true) ||
+            it.displayTitle.contains(searchQuery, ignoreCase = true) ||
             it.last_message.contains(searchQuery, ignoreCase = true)
         }
     }
@@ -346,14 +346,14 @@ fun ChatItem(chat: ChatConversationData) {
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = chat.partner_name.take(1).uppercase(),
+                        text = chat.displayName.take(1).uppercase(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp,
                         color = TrueLinePrimary
                     )
                 }
             }
-            if (chat.partner_availability == "online") {
+            if (chat.displayAvailability.equals("online", ignoreCase = true)) {
                 Surface(
                     shape = CircleShape,
                     color = TrueLineOnline,
@@ -376,19 +376,19 @@ fun ChatItem(chat: ChatConversationData) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = chat.partner_name,
+                        text = chat.displayName,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = TrueLineDarkBg
                     )
-                    if (chat.partner_title.isNotBlank()) {
+                    if (chat.displayTitle.isNotBlank()) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = TrueLinePrimary.copy(alpha = 0.08f)
                         ) {
                             Text(
-                                text = chat.partner_title,
+                                text = chat.displayTitle,
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TrueLinePrimary,

@@ -315,6 +315,10 @@ fun MainScreen(
 
     var selectedTab by rememberSaveable { mutableIntStateOf(initialTab) }
 
+    LaunchedEffect(initialTab) {
+        selectedTab = initialTab
+    }
+
     LaunchedEffect(Unit) {
         onSearchChanged(searchQueryInitial)
     }
