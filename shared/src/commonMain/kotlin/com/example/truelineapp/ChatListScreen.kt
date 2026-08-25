@@ -155,12 +155,12 @@ fun ChatListScreen(
 
         // --- ACTIVE / ONLINE LISTENERS HORIZONTAL TRAY ---
         if (conversations.isNotEmpty()) {
-            val activeListeners = conversations.filter { it.partner_availability == "online" }
+            val activeListeners = conversations.filter { it.displayAvailability.equals("online", ignoreCase = true) }
             if (activeListeners.isNotEmpty()) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp, bottom = 6.dp)
+                        .padding(top = 10.dp, bottom = 4.dp)
                 ) {
                     Text(
                         text = "ONLINE NOW",
@@ -185,7 +185,7 @@ fun ChatListScreen(
                                     .padding(4.dp)
                             ) {
                                 Box(
-                                    modifier = Modifier.size(52.dp),
+                                    modifier = Modifier.size(54.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Surface(
@@ -196,7 +196,7 @@ fun ChatListScreen(
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
                                             Text(
-                                                text = listener.partner_name.take(1).uppercase(),
+                                                text = listener.displayName.take(1).uppercase(),
                                                 fontWeight = FontWeight.Bold,
                                                 fontSize = 18.sp,
                                                 color = TrueLinePrimary
@@ -208,13 +208,13 @@ fun ChatListScreen(
                                         color = TrueLineOnline,
                                         border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White),
                                         modifier = Modifier
-                                            .size(12.dp)
+                                            .size(13.dp)
                                             .align(Alignment.BottomEnd)
                                     ) {}
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = listener.partner_name.split(" ").firstOrNull() ?: listener.partner_name,
+                                    text = listener.displayName.split(" ").firstOrNull() ?: listener.displayName,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.SemiBold,
                                     color = TrueLineDarkBg,
@@ -228,8 +228,8 @@ fun ChatListScreen(
 
                 HorizontalDivider(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
-                    thickness = 0.6.dp,
-                    color = Color(0xFFE2E8F0)
+                    thickness = 0.8.dp,
+                    color = Color(0xFFF1F5F9)
                 )
             }
         }
@@ -306,19 +306,19 @@ fun ChatListScreen(
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp)
             ) {
                 items(filteredConversations) { chat ->
                     Surface(
                         onClick = { onChatClick(chat) },
-                        color = Color.Transparent
+                        color = Color.White
                     ) {
                         ChatItem(chat)
                     }
                     HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        thickness = 0.6.dp,
-                        color = Color(0xFFE2E8F0)
+                        modifier = Modifier.padding(start = 82.dp, end = 20.dp),
+                        thickness = 0.8.dp,
+                        color = Color(0xFFF1F5F9)
                     )
                 }
             }
@@ -331,7 +331,7 @@ fun ChatItem(chat: ChatConversationData) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Listener Avatar Box
@@ -341,7 +341,8 @@ fun ChatItem(chat: ChatConversationData) {
         ) {
             Surface(
                 shape = CircleShape,
-                color = TrueLinePrimary.copy(alpha = 0.12f),
+                color = TrueLinePrimary.copy(alpha = 0.10f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, TrueLinePrimary.copy(alpha = 0.15f)),
                 modifier = Modifier.fillMaxSize()
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -368,57 +369,57 @@ fun ChatItem(chat: ChatConversationData) {
         Spacer(modifier = Modifier.width(14.dp))
 
         // Content
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = chat.displayName,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TrueLineDarkBg
-                    )
-                    if (chat.displayTitle.isNotBlank()) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = TrueLinePrimary.copy(alpha = 0.08f)
-                        ) {
-                            Text(
-                                text = chat.displayTitle,
-                                fontSize = 10.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = TrueLinePrimary,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                if (chat.last_message_time.isNotBlank()) {
-                    Text(
-                        text = formatTimestamp(chat.last_message_time),
-                        fontSize = 11.sp,
-                        color = if (chat.unread_count > 0) TrueLinePrimary else TrueLineTextSecondary,
-                        fontWeight = if (chat.unread_count > 0) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Top Row: Name + Time
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = if (chat.last_message.isNotBlank()) chat.last_message else "Tap to start conversation...",
+                    text = chat.displayName,
+                    fontSize = 15.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TrueLineDarkBg,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                if (chat.last_message_time.isNotBlank()) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = formatTimestamp(chat.last_message_time),
+                        fontSize = 11.5.sp,
+                        color = if (chat.unread_count > 0) TrueLinePrimary else Color(0xFF94A3B8),
+                        fontWeight = if (chat.unread_count > 0) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Bottom Row: Message preview + Unread Badge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val previewText = when {
+                    chat.last_message.isNotBlank() -> chat.last_message
+                    chat.displayTitle.isNotBlank() -> chat.displayTitle
+                    else -> "Tap to start conversation"
+                }
+
+                Text(
+                    text = previewText,
                     fontSize = 13.sp,
-                    color = if (chat.unread_count > 0) TrueLineDarkBg else TrueLineTextSecondary,
+                    color = if (chat.unread_count > 0) TrueLineDarkBg else Color(0xFF64748B),
                     fontWeight = if (chat.unread_count > 0) FontWeight.SemiBold else FontWeight.Normal,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -435,7 +436,7 @@ fun ChatItem(chat: ChatConversationData) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = chat.unread_count.toString(),
-                                fontSize = 10.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TrueLineDarkBg
                             )
