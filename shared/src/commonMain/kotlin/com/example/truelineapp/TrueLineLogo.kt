@@ -25,9 +25,7 @@ fun TrueLineLogo(size: Dp = 40.dp, modifier: Modifier = Modifier) {
     Image(
         painter = painterResource(Res.drawable.app_logo),
         contentDescription = "TrueLine Logo",
-        modifier = modifier
-            .size(size)
-            .clip(RoundedCornerShape(size * 0.22f)),
+        modifier = modifier.size(size),
         contentScale = ContentScale.Fit
     )
 }
