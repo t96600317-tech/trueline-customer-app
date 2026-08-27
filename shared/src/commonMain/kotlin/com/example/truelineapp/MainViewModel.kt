@@ -31,11 +31,18 @@ class MainViewModel(private val scope: CoroutineScope) {
     var canResendOtp by mutableStateOf(false)
     private var otpTimerJob: Job? = null
 
+    companion object {
+        fun generateDefaultUsername(): String {
+            val randomDigits = kotlin.random.Random.nextInt(100000, 1000000)
+            return "user$randomDigits"
+        }
+    }
+
     // --- User & Profile State ---
     var walletBalance by mutableDoubleStateOf(1000.0)
     var selectedLanguage by mutableStateOf("en")
     var userId by mutableStateOf("User")
-    var userName by mutableStateOf("User #User")
+    var userName by mutableStateOf(generateDefaultUsername())
     var userPhotoPath by mutableStateOf<String?>(null)
     var isFirstTimeNameChange by mutableStateOf(true)
     var isProfileLoading by mutableStateOf(false)
@@ -69,7 +76,14 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     init {
         val storage = com.example.truelineapp.storage.getSessionStorage()
-        userName = storage.getUserName() ?: "User #User"
+        val savedName = storage.getUserName()
+        if (savedName.isNullOrBlank() || savedName.startsWith("User #")) {
+            val defaultName = generateDefaultUsername()
+            storage.saveUserName(defaultName)
+            userName = defaultName
+        } else {
+            userName = savedName
+        }
         userPhotoPath = storage.getUserPhoto()
         walletBalance = storage.getWalletBalance() ?: 1000.0
         isFirstTimeNameChange = !storage.isNameChangedBefore()
@@ -153,7 +167,13 @@ class MainViewModel(private val scope: CoroutineScope) {
             val savedBalance = storage.getWalletBalance()
             val savedName = storage.getUserName()
             val savedPhoto = storage.getUserPhoto()
-            if (savedName != null) userName = savedName
+            if (savedName.isNullOrBlank() || savedName.startsWith("User #")) {
+                val defaultName = generateDefaultUsername()
+                storage.saveUserName(defaultName)
+                userName = defaultName
+            } else {
+                userName = savedName
+            }
             if (savedPhoto != null) userPhotoPath = savedPhoto
             isFirstTimeNameChange = !storage.isNameChangedBefore()
 
@@ -163,9 +183,6 @@ class MainViewModel(private val scope: CoroutineScope) {
                 walletBalance = if (savedBalance != null) savedBalance else if (res.data.balance <= 0.0) 1000.0 else res.data.balance
                 selectedLanguage = res.data.user.language_pref
                 userId = res.data.user.id.take(8).uppercase()
-                if (savedName == null) {
-                    userName = "User #${userId}"
-                }
                 try {
                     com.example.truelineapp.call.getCallService().initialize(
                         628007464L,

@@ -60,7 +60,7 @@ actual fun UserAvatar(
                 contentScale = ContentScale.Crop
             )
         } else {
-            val initial = name.trim().removePrefix("User #").take(1).uppercase().ifBlank { "U" }
+            val initial = name.trim().take(1).uppercase().ifBlank { "U" }
             Box(
                 modifier = Modifier
                     .fillMaxSize()

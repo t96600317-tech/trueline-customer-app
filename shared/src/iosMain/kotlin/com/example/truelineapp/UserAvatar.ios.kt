@@ -25,7 +25,7 @@ actual fun UserAvatar(
     modifier: Modifier,
     size: Dp
 ) {
-    val initial = name.trim().removePrefix("User #").take(1).uppercase().ifBlank { "U" }
+    val initial = name.trim().take(1).uppercase().ifBlank { "U" }
     Surface(
         modifier = modifier.size(size),
         shape = CircleShape,
