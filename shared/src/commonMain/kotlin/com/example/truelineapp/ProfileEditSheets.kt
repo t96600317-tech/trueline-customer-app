@@ -199,19 +199,6 @@ fun PhotoConfirmationBottomSheet(
                             color = Color(0xFFDC2626),
                             fontSize = 15.sp
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            color = Color(0xFFDC2626).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                "FREE",
-                                color = Color(0xFFDC2626),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
                     }
                 }
             }
@@ -353,22 +340,7 @@ fun PhotoSourcePickerBottomSheet(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("Remove Current Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFDC2626))
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Surface(
-                                    color = Color(0xFFDC2626).copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(6.dp)
-                                ) {
-                                    Text(
-                                        "FREE",
-                                        color = Color(0xFFDC2626),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
+                            Text("Remove Current Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFDC2626))
                             Text("Reset to default avatar", fontSize = 12.sp, color = Color.Gray)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
