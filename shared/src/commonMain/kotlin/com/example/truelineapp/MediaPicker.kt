@@ -6,4 +6,4 @@ import androidx.compose.runtime.Composable
 expect fun rememberGalleryLauncher(onImagePicked: (String?) -> Unit): () -> Unit
 
 @Composable
-expect fun rememberCameraLauncher(onImageCaptured: (Boolean) -> Unit): () -> Unit
+expect fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Unit

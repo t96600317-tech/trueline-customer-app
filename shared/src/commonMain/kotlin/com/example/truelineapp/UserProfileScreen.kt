@@ -26,12 +26,14 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun UserProfileScreen(
     userName: String,
+    userPhotoPath: String?,
     walletBalance: Int,
     isFirstTimeNameChange: Boolean,
     selectedLanguageCode: String,
     onLogout: () -> Unit,
     onAddCoins: () -> Unit,
-    onUpdateProfile: (newName: String, cost: Int) -> Unit,
+    onUpdateName: (newName: String, cost: Int) -> Unit,
+    onUpdatePhoto: (photoPath: String, cost: Int) -> Unit,
     onLanguageClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -50,7 +52,7 @@ fun UserProfileScreen(
                 onAddCoins()
             },
             onSave = { newName, cost ->
-                onUpdateProfile(newName, cost)
+                onUpdateName(newName, cost)
                 showNameEdit = false
             }
         )
@@ -71,15 +73,15 @@ fun UserProfileScreen(
         )
     }
 
-    val launchGallery = rememberGalleryLauncher { uri ->
-        if (uri != null) {
-            onUpdateProfile(userName, 59)
+    val launchGallery = rememberGalleryLauncher { path ->
+        if (!path.isNullOrBlank()) {
+            onUpdatePhoto(path, 59)
         }
     }
 
-    val launchCamera = rememberCameraLauncher { success ->
-        if (success) {
-            onUpdateProfile(userName, 59)
+    val launchCamera = rememberCameraLauncher { path ->
+        if (!path.isNullOrBlank()) {
+            onUpdatePhoto(path, 59)
         }
     }
 
@@ -128,28 +130,24 @@ fun UserProfileScreen(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 // Avatar with Camera Icon
                 Box(contentAlignment = Alignment.BottomEnd) {
+                    UserAvatar(
+                        photoPath = userPhotoPath,
+                        name = userName,
+                        size = 100.dp
+                    )
                     Surface(
-                        modifier = Modifier.size(100.dp),
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.2f),
-                        border = BorderStroke(3.dp, Color.White)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("👤", fontSize = 40.sp)
-                        }
-                    }
-                    Surface(
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(34.dp),
                         shape = CircleShape,
                         color = TrueLineAccent,
                         border = BorderStroke(2.dp, Color.White),
+                        shadowElevation = 4.dp,
                         onClick = { showPhotoConfirm = true }
                     ) {
                         Icon(
                             Icons.Default.CameraAlt,
                             contentDescription = "Edit Photo",
                             tint = Color.White,
-                            modifier = Modifier.padding(6.dp)
+                            modifier = Modifier.padding(7.dp)
                         )
                     }
                 }

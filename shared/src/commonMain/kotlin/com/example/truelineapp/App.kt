@@ -124,8 +124,9 @@ fun App() {
                     MainScreen(
                         initialTab = initialTab,
                         walletBalance = viewModel.walletBalance.toInt(),
-                        userName = "User #${viewModel.userId}",
-                        isFirstTimeNameChange = false,
+                        userName = viewModel.userName,
+                        userPhotoPath = viewModel.userPhotoPath,
+                        isFirstTimeNameChange = viewModel.isFirstTimeNameChange,
                         selectedLanguageCode = viewModel.selectedLanguage,
                         partners = viewModel.partners,
                         isDiscoverLoading = viewModel.isDiscoverLoading,
@@ -143,7 +144,8 @@ fun App() {
                         onAddCoins = { _ ->
                             navController.navigate("wallet")
                         },
-                        onUpdateProfile = { _, _ -> },
+                        onUpdateName = { name, cost -> viewModel.updateUserName(name, cost) },
+                        onUpdatePhoto = { path, cost -> viewModel.updateUserPhoto(path, cost) },
                         onLanguageUpdate = { code ->
                             viewModel.updateLanguage(code)
                         },
@@ -284,6 +286,7 @@ fun MainScreen(
     initialTab: Int, 
     walletBalance: Int,
     userName: String,
+    userPhotoPath: String?,
     isFirstTimeNameChange: Boolean,
     selectedLanguageCode: String,
     partners: List<ListenerDiscovery>,
@@ -296,7 +299,8 @@ fun MainScreen(
     onChatClick: (ChatConversationData) -> Unit,
     onNavigateToWallet: () -> Unit,
     onAddCoins: (Int) -> Unit,
-    onUpdateProfile: (String, Int) -> Unit,
+    onUpdateName: (String, Int) -> Unit,
+    onUpdatePhoto: (String, Int) -> Unit,
     onLanguageUpdate: (String) -> Unit,
     onSearchChanged: (String) -> Unit,
     onDiscoverLanguageSelected: (String) -> Unit,
@@ -838,12 +842,14 @@ fun MainScreen(
                 2 -> {
                     UserProfileScreen(
                         userName = userName,
+                        userPhotoPath = userPhotoPath,
                         walletBalance = walletBalance,
                         isFirstTimeNameChange = isFirstTimeNameChange,
                         selectedLanguageCode = selectedLanguageCode,
                         onLogout = onLogout,
                         onAddCoins = { showAddCoinsSheet = true },
-                        onUpdateProfile = onUpdateProfile,
+                        onUpdateName = onUpdateName,
+                        onUpdatePhoto = onUpdatePhoto,
                         onLanguageClick = { showLanguageSheet = true }
                     )
                 }

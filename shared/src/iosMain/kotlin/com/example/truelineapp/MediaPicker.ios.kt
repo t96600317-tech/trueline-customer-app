@@ -8,6 +8,6 @@ actual fun rememberGalleryLauncher(onImagePicked: (String?) -> Unit): () -> Unit
 }
 
 @Composable
-actual fun rememberCameraLauncher(onImageCaptured: (Boolean) -> Unit): () -> Unit {
-    return { onImageCaptured(true) }
+actual fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Unit {
+    return { onImageCaptured("ios_camera_captured") }
 }

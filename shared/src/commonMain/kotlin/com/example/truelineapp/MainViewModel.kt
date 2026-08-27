@@ -35,6 +35,9 @@ class MainViewModel(private val scope: CoroutineScope) {
     var walletBalance by mutableDoubleStateOf(1000.0)
     var selectedLanguage by mutableStateOf("en")
     var userId by mutableStateOf("User")
+    var userName by mutableStateOf("User #User")
+    var userPhotoPath by mutableStateOf<String?>(null)
+    var isFirstTimeNameChange by mutableStateOf(true)
     var isProfileLoading by mutableStateOf(false)
 
     // --- Discovery State ---
@@ -65,7 +68,11 @@ class MainViewModel(private val scope: CoroutineScope) {
     private var callEventsJob: Job? = null
 
     init {
-        walletBalance = 1000.0
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        userName = storage.getUserName() ?: "User #User"
+        userPhotoPath = storage.getUserPhoto()
+        walletBalance = storage.getWalletBalance() ?: 1000.0
+        isFirstTimeNameChange = !storage.isNameChangedBefore()
         checkAutoLogin()
         fetchListeners()
     }
@@ -142,22 +149,83 @@ class MainViewModel(private val scope: CoroutineScope) {
     fun fetchUserProfile() {
         isProfileLoading = true
         scope.launch {
+            val storage = com.example.truelineapp.storage.getSessionStorage()
+            val savedBalance = storage.getWalletBalance()
+            val savedName = storage.getUserName()
+            val savedPhoto = storage.getUserPhoto()
+            if (savedName != null) userName = savedName
+            if (savedPhoto != null) userPhotoPath = savedPhoto
+            isFirstTimeNameChange = !storage.isNameChangedBefore()
+
             val res = repository.getUserProfile()
             isProfileLoading = false
             if (res.success && res.data != null) {
-                walletBalance = if (res.data.balance <= 0.0) 1000.0 else res.data.balance
+                walletBalance = if (savedBalance != null) savedBalance else if (res.data.balance <= 0.0) 1000.0 else res.data.balance
                 selectedLanguage = res.data.user.language_pref
                 userId = res.data.user.id.take(8).uppercase()
+                if (savedName == null) {
+                    userName = "User #${userId}"
+                }
                 try {
                     com.example.truelineapp.call.getCallService().initialize(
                         628007464L,
                         "e7dffb8a9cb6a89f1fc2afddcc16f4ce4df9cd1e8ca346076161caf69cbd465e",
                         res.data.user.id,
-                        "User #${userId}"
+                        userName
                     )
                 } catch (e: Exception) {}
             } else {
-                if (walletBalance <= 0.0) walletBalance = 1000.0
+                if (savedBalance != null) {
+                    walletBalance = savedBalance
+                } else if (walletBalance <= 0.0) {
+                    walletBalance = 1000.0
+                }
+            }
+        }
+    }
+
+    fun updateUserPhoto(photoPath: String, cost: Int = 59) {
+        if (walletBalance >= cost) {
+            walletBalance -= cost
+            userPhotoPath = photoPath
+            val storage = com.example.truelineapp.storage.getSessionStorage()
+            storage.saveUserPhoto(photoPath)
+            storage.saveWalletBalance(walletBalance)
+            transactions.add(
+                0,
+                TransactionItem(
+                    id = "tx_${kotlin.random.Random.nextInt(100000, 999999)}",
+                    amount = cost.toDouble(),
+                    type = "debit",
+                    description = "Profile Photo Update",
+                    created_at = "Just now"
+                )
+            )
+        }
+    }
+
+    fun updateUserName(newName: String, cost: Int) {
+        if (walletBalance >= cost) {
+            if (cost > 0) {
+                walletBalance -= cost
+            }
+            userName = newName
+            isFirstTimeNameChange = false
+            val storage = com.example.truelineapp.storage.getSessionStorage()
+            storage.saveUserName(newName)
+            storage.saveWalletBalance(walletBalance)
+            storage.saveNameChangedBefore(true)
+            if (cost > 0) {
+                transactions.add(
+                    0,
+                    TransactionItem(
+                        id = "tx_${kotlin.random.Random.nextInt(100000, 999999)}",
+                        amount = cost.toDouble(),
+                        type = "debit",
+                        description = "Profile Name Update ($newName)",
+                        created_at = "Just now"
+                    )
+                )
             }
         }
     }
