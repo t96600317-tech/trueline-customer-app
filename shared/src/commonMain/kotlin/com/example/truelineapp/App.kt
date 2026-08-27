@@ -155,19 +155,17 @@ fun App() {
                         onRefreshChatList = { viewModel.fetchConversations() },
                         onPlayAudio = { viewModel.toggleAudioPlayback(it) },
                         onConnectToListener = { listenerId ->
-                            val partner = viewModel.partners.find { it.id == listenerId }
-                            val partnerName = partner?.name ?: "Listener"
-                            val roomId = "call_${listenerId.replace("-", "").take(16)}"
-                            viewModel.connectToListener(listenerId)
-                            com.example.truelineapp.call.getCallService().startAudioCall(
-                                roomId = roomId,
-                                targetUserId = listenerId,
-                                targetUserName = partnerName,
-                                token = "",
-                                onCallEnd = {
-                                    viewModel.onCallFinished(180)
-                                }
-                            )
+                            viewModel.connectToListener(listenerId) { roomId, token, targetId, targetName ->
+                                com.example.truelineapp.call.getCallService().startAudioCall(
+                                    roomId = roomId,
+                                    targetUserId = targetId,
+                                    targetUserName = targetName,
+                                    token = token,
+                                    onCallEnd = {
+                                        viewModel.onCallFinished(180)
+                                    }
+                                )
+                            }
                         },
                         onLogout = {
                             viewModel.logout {
@@ -256,17 +254,17 @@ fun App() {
                         onLoadMessages = { viewModel.openChatRoom(id) },
                         onSendMessage = { content -> viewModel.sendChatMessage(id, content) },
                         onCallClick = {
-                            val roomId = "call_${id.replace("-", "").take(16)}"
-                            viewModel.connectToListener(id)
-                            com.example.truelineapp.call.getCallService().startAudioCall(
-                                roomId = roomId,
-                                targetUserId = id,
-                                targetUserName = name,
-                                token = "",
-                                onCallEnd = {
-                                    viewModel.onCallFinished(180)
-                                }
-                            )
+                            viewModel.connectToListener(id) { roomId, token, targetId, targetName ->
+                                com.example.truelineapp.call.getCallService().startAudioCall(
+                                    roomId = roomId,
+                                    targetUserId = targetId,
+                                    targetUserName = targetName,
+                                    token = token,
+                                    onCallEnd = {
+                                        viewModel.onCallFinished(180)
+                                    }
+                                )
+                            }
                         },
                         onBack = {
                             navController.navigate("main/1") {
