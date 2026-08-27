@@ -192,6 +192,13 @@ class MainViewModel(private val scope: CoroutineScope) {
 
             isProfileLoading = false
             if (res.success && res.data != null) {
+                if (res.data.user.name.isNotBlank() && res.data.user.name != userName) {
+                    // If backend has a custom name saved, use it
+                    userName = res.data.user.name
+                    storage.saveUserName(userName)
+                } else if (userName.isNotBlank()) {
+                    repository.updateUserName(userName)
+                }
                 walletBalance = if (savedBalance != null) savedBalance else if (res.data.balance <= 0.0) 1000.0 else res.data.balance
                 userId = res.data.user.id.take(8).uppercase()
                 try {
@@ -256,6 +263,9 @@ class MainViewModel(private val scope: CoroutineScope) {
             storage.saveUserName(newName)
             storage.saveWalletBalance(walletBalance)
             storage.saveNameChangedBefore(true)
+            scope.launch {
+                repository.updateUserName(newName)
+            }
             if (cost > 0) {
                 transactions.add(
                     0,

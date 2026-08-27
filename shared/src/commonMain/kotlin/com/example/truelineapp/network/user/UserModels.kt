@@ -11,6 +11,7 @@ data class UserProfileData(
 @Serializable
 data class UserInfo(
     val id: String,
+    val name: String = "",
     val phone: String,
     val language_pref: String,
     val status: String

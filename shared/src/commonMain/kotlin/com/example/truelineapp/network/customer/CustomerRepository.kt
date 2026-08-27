@@ -395,4 +395,19 @@ class CustomerRepository(
             ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to send message"))
         }
     }
+
+    suspend fun updateUserName(name: String): ApiResponse<UserProfileData> {
+        val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
+        return try {
+            executeWithFallback { baseUrl ->
+                client.patch("$baseUrl/user/profile") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("name" to name))
+                }.body()
+            }
+        } catch (e: Exception) {
+            ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to update profile name"))
+        }
+    }
 }
