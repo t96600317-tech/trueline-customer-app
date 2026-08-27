@@ -1,6 +1,9 @@
 package com.example.truelineapp
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +28,45 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
 
+fun decodeBitmapWithExif(filePath: String): Bitmap? {
+    return try {
+        val file = File(filePath)
+        if (!file.exists() || file.length() == 0L) return null
+
+        var degrees = 0f
+        try {
+            val exif = ExifInterface(file.absolutePath)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            degrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                else -> 0f
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        var bitmap = BitmapFactory.decodeFile(file.absolutePath) ?: return null
+        if (degrees != 0f) {
+            val matrix = Matrix()
+            matrix.postRotate(degrees)
+            val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+            if (rotated != bitmap) {
+                bitmap.recycle()
+                bitmap = rotated
+            }
+        }
+        bitmap
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
 @Composable
 actual fun UserAvatar(
     photoPath: String?,
@@ -34,14 +76,7 @@ actual fun UserAvatar(
 ) {
     val bitmap = remember(photoPath) {
         if (!photoPath.isNullOrBlank()) {
-            try {
-                val file = File(photoPath)
-                if (file.exists() && file.length() > 0) {
-                    BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
-                } else null
-            } catch (e: Exception) {
-                null
-            }
+            decodeBitmapWithExif(photoPath)?.asImageBitmap()
         } else null
     }
 
