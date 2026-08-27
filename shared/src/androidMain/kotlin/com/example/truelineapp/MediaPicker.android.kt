@@ -17,7 +17,13 @@ actual fun rememberGalleryLauncher(onImagePicked: (String?) -> Unit): () -> Unit
         if (uri != null) {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
-                val destFile = File(context.filesDir, "user_profile_avatar.jpg")
+                // Remove previous avatar files
+                context.filesDir.listFiles()?.forEach { file ->
+                    if (file.name.startsWith("user_avatar_") && file.name.endsWith(".jpg")) {
+                        file.delete()
+                    }
+                }
+                val destFile = File(context.filesDir, "user_avatar_${System.currentTimeMillis()}.jpg")
                 val outputStream = FileOutputStream(destFile)
                 inputStream?.use { input ->
                     outputStream.use { output ->
@@ -44,7 +50,13 @@ actual fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Uni
     ) { bitmap ->
         if (bitmap != null) {
             try {
-                val destFile = File(context.filesDir, "user_profile_avatar.jpg")
+                // Remove previous avatar files
+                context.filesDir.listFiles()?.forEach { file ->
+                    if (file.name.startsWith("user_avatar_") && file.name.endsWith(".jpg")) {
+                        file.delete()
+                    }
+                }
+                val destFile = File(context.filesDir, "user_avatar_${System.currentTimeMillis()}.jpg")
                 val outputStream = FileOutputStream(destFile)
                 outputStream.use { output ->
                     bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
