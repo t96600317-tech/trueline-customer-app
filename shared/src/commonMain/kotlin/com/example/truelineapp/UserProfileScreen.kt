@@ -41,7 +41,26 @@ fun UserProfileScreen(
     var showNameEdit by remember { mutableStateOf(false) }
     var showPhotoConfirm by remember { mutableStateOf(false) }
     var showPhotoSourcePicker by remember { mutableStateOf(false) }
+    var pendingPhotoPath by remember { mutableStateOf<String?>(null) }
+    var isCameraPreview by remember { mutableStateOf(true) }
+    var showPhotoPreview by remember { mutableStateOf(false) }
     val hasExistingPhoto = !userPhotoPath.isNullOrBlank()
+
+    val launchGallery = rememberGalleryLauncher { path ->
+        if (!path.isNullOrBlank()) {
+            pendingPhotoPath = path
+            isCameraPreview = false
+            showPhotoPreview = true
+        }
+    }
+
+    val launchCamera = rememberCameraLauncher { path ->
+        if (!path.isNullOrBlank()) {
+            pendingPhotoPath = path
+            isCameraPreview = true
+            showPhotoPreview = true
+        }
+    }
 
     if (showNameEdit) {
         EditNameBottomSheet(
@@ -80,18 +99,6 @@ fun UserProfileScreen(
         )
     }
 
-    val launchGallery = rememberGalleryLauncher { path ->
-        if (!path.isNullOrBlank()) {
-            onUpdatePhoto(path, 59)
-        }
-    }
-
-    val launchCamera = rememberCameraLauncher { path ->
-        if (!path.isNullOrBlank()) {
-            onUpdatePhoto(path, 59)
-        }
-    }
-
     if (showPhotoSourcePicker) {
         PhotoSourcePickerBottomSheet(
             hasExistingPhoto = hasExistingPhoto,
@@ -107,6 +114,38 @@ fun UserProfileScreen(
             onRemovePhoto = {
                 showPhotoSourcePicker = false
                 onRemovePhoto()
+            }
+        )
+    }
+
+    if (showPhotoPreview && pendingPhotoPath != null) {
+        PhotoPreviewBottomSheet(
+            photoPath = pendingPhotoPath!!,
+            userBalance = walletBalance,
+            isCamera = isCameraPreview,
+            onDismiss = {
+                showPhotoPreview = false
+                pendingPhotoPath = null
+            },
+            onRetake = {
+                showPhotoPreview = false
+                if (isCameraPreview) {
+                    launchCamera()
+                } else {
+                    launchGallery()
+                }
+            },
+            onAddCoins = {
+                showPhotoPreview = false
+                onAddCoins()
+            },
+            onUpload = {
+                val path = pendingPhotoPath
+                showPhotoPreview = false
+                pendingPhotoPath = null
+                if (!path.isNullOrBlank()) {
+                    onUpdatePhoto(path, 59)
+                }
             }
         )
     }

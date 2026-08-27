@@ -7,9 +7,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -169,10 +171,10 @@ fun PhotoConfirmationBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Pay ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                    Text("Choose Photo (Cost: ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                     CoinLogo(size = 16.dp)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("$cost & Choose Photo", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                    Text("$cost)", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 }
             }
 
@@ -317,7 +319,7 @@ fun PhotoSourcePickerBottomSheet(
             if (hasExistingPhoto) {
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Option 3: Remove Current Photo (Free)
+                // Option 3: Remove Current Photo
                 Surface(
                     onClick = onRemovePhoto,
                     shape = RoundedCornerShape(16.dp),
@@ -349,6 +351,146 @@ fun PhotoSourcePickerBottomSheet(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
+
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color.Gray)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PhotoPreviewBottomSheet(
+    photoPath: String,
+    userBalance: Int,
+    isCamera: Boolean = true,
+    onDismiss: () -> Unit,
+    onRetake: () -> Unit,
+    onAddCoins: () -> Unit,
+    onUpload: () -> Unit
+) {
+    val cost = 59
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        dragHandle = null
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .navigationBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    if (isCamera) "Preview Selfie" else "Preview Photo",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TrueLineDarkBg
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Photo Preview Circle
+            UserAvatar(
+                photoPath = photoPath,
+                name = "User",
+                size = 140.dp
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Cost banner
+            Surface(
+                color = TrueLineLightBg,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text("Upload Cost:", fontSize = 15.sp, color = TrueLineDarkBg)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    CoinLogo(size = 22.dp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("$cost Coins", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Action Buttons: Retake and Upload
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Retake Button
+                OutlinedButton(
+                    onClick = onRetake,
+                    modifier = Modifier.weight(1f).height(54.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    border = BorderStroke(1.5.dp, TrueLinePrimary),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Retake",
+                            tint = TrueLinePrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            if (isCamera) "Retake" else "Change",
+                            fontWeight = FontWeight.Bold,
+                            color = TrueLinePrimary,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+
+                // Upload Button
+                Button(
+                    onClick = {
+                        if (userBalance >= cost) onUpload() else onAddCoins()
+                    },
+                    modifier = Modifier.weight(1.3f).height(54.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Upload",
+                            tint = TrueLineDarkBg,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "Upload",
+                            fontWeight = FontWeight.Bold,
+                            color = TrueLineDarkBg,
+                            fontSize = 15.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = onDismiss) {
                 Text("Cancel", color = Color.Gray)

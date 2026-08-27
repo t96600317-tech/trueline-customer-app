@@ -1,10 +1,13 @@
 package com.example.truelineapp
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.io.FileOutputStream
 
@@ -45,7 +48,7 @@ actual fun rememberGalleryLauncher(onImagePicked: (String?) -> Unit): () -> Unit
 @Composable
 actual fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Unit {
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(
+    val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         if (bitmap != null) {
@@ -59,7 +62,7 @@ actual fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Uni
                 val destFile = File(context.filesDir, "user_avatar_${System.currentTimeMillis()}.jpg")
                 val outputStream = FileOutputStream(destFile)
                 outputStream.use { output ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 90, output)
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, 95, output)
                 }
                 onImageCaptured(destFile.absolutePath)
             } catch (e: Exception) {
@@ -70,5 +73,21 @@ actual fun rememberCameraLauncher(onImageCaptured: (String?) -> Unit): () -> Uni
             onImageCaptured(null)
         }
     }
-    return { launcher.launch(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        }
+    }
+
+    return {
+        val permissionCheck = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            cameraLauncher.launch(null)
+        } else {
+            permissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
 }
