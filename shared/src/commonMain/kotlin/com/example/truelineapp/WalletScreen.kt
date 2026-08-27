@@ -33,10 +33,12 @@ fun WalletScreen(
     isProcessing: Boolean = false,
     transactions: List<TransactionItem> = emptyList(),
     isTransactionsLoading: Boolean = false,
+    selectedLanguageCode: String = "en",
     onBack: () -> Unit,
     onRecharge: (amountPaise: Long, coins: Long) -> Unit,
     onRefreshTransactions: () -> Unit = {}
 ) {
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
     var selectedTab by remember { mutableIntStateOf(0) } // 0: Top Up, 1: History
     var selectedPackageAmount by remember { mutableIntStateOf(260) }
 
@@ -58,7 +60,7 @@ fun WalletScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "My Wallet",
+                        text = strings.walletTitle,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = TrueLineDarkBg

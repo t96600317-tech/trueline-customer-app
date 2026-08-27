@@ -62,11 +62,14 @@ fun UserProfileScreen(
         }
     }
 
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
+
     if (showNameEdit) {
         EditNameBottomSheet(
             currentName = userName,
             isFirstTime = isFirstTimeNameChange,
             userBalance = walletBalance,
+            selectedLanguageCode = selectedLanguageCode,
             onDismiss = { showNameEdit = false },
             onAddCoins = {
                 showNameEdit = false
@@ -83,6 +86,7 @@ fun UserProfileScreen(
         PhotoConfirmationBottomSheet(
             hasExistingPhoto = hasExistingPhoto,
             userBalance = walletBalance,
+            selectedLanguageCode = selectedLanguageCode,
             onDismiss = { showPhotoConfirm = false },
             onAddCoins = {
                 showPhotoConfirm = false
@@ -102,6 +106,7 @@ fun UserProfileScreen(
     if (showPhotoSourcePicker) {
         PhotoSourcePickerBottomSheet(
             hasExistingPhoto = hasExistingPhoto,
+            selectedLanguageCode = selectedLanguageCode,
             onDismiss = { showPhotoSourcePicker = false },
             onChooseFromGallery = {
                 showPhotoSourcePicker = false
@@ -123,6 +128,7 @@ fun UserProfileScreen(
             photoPath = pendingPhotoPath!!,
             userBalance = walletBalance,
             isCamera = isCameraPreview,
+            selectedLanguageCode = selectedLanguageCode,
             onDismiss = {
                 showPhotoPreview = false
                 pendingPhotoPath = null
@@ -246,26 +252,26 @@ fun UserProfileScreen(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SettingsGroup(title = "Account Settings") {
+            SettingsGroup(title = strings.accountSettings) {
                 SettingsItem(
                     icon = Icons.Default.Shield,
-                    title = "Privacy & Security",
+                    title = strings.privacyAndSecurity,
                     colorTint = Color(0xFFE8F5E9)
                 )
                 SettingsItem(
                     icon = Icons.Default.Language,
-                    title = "Language Preference",
+                    title = strings.languagePreference,
                     subtitle = displayLanguage,
                     colorTint = Color(0xFFE3F2FD),
                     onClick = onLanguageClick
                 )
             }
 
-            SettingsGroup(title = "Support & Information") {
+            SettingsGroup(title = strings.supportAndInformation) {
                 SettingsItem(
                     icon = Icons.Default.HeadsetMic,
-                    title = "Customer Support",
-                    subtitle = "24/7 Help Center",
+                    title = strings.customerSupport,
+                    subtitle = strings.helpCenter24x7,
                     colorTint = Color(0xFFFFF3E0),
                     onClick = { /* TODO: Open support */ }
                 )
@@ -285,7 +291,7 @@ fun UserProfileScreen(
                     Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null, tint = Color(0xFFD32F2F))
                     Spacer(modifier = Modifier.width(16.dp))
                     Text(
-                        "Logout",
+                        strings.logout,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFD32F2F),
                         fontSize = 16.sp

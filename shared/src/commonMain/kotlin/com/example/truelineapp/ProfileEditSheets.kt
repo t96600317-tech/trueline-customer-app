@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.truelineapp.i18n.getAppStrings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,10 +28,12 @@ fun EditNameBottomSheet(
     currentName: String,
     isFirstTime: Boolean,
     userBalance: Int,
+    selectedLanguageCode: String = "en",
     onDismiss: () -> Unit,
     onAddCoins: () -> Unit,
     onSave: (newName: String, cost: Int) -> Unit
 ) {
+    val strings = getAppStrings(selectedLanguageCode)
     val cost = if (isFirstTime) 0 else 20
     var nameState by remember { mutableStateOf(currentName) }
 
@@ -46,7 +49,7 @@ fun EditNameBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Edit Name", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                Text(strings.editName, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
                 }
@@ -62,11 +65,11 @@ fun EditNameBottomSheet(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Enter New Name", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
+                        Text(strings.enterNewName, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
                         Spacer(modifier = Modifier.weight(1f))
                         if (isFirstTime) {
                             Surface(color = Color(0xFFE8F5E9), shape = RoundedCornerShape(6.dp)) {
-                                Text("FREE", color = TrueLineOnline, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                                Text(strings.freeBadge, color = TrueLineOnline, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                             }
                         } else {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -106,13 +109,10 @@ fun EditNameBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 if (cost == 0) {
-                    Text("Save Changes (Free)", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                    Text(strings.saveChangesFree, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 } else {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Pay ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
-                        CoinLogo(size = 16.dp)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("$cost & Save", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                        Text("${strings.payAndSave.replace("%d", "$cost")}", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                     }
                 }
             }
@@ -125,11 +125,13 @@ fun EditNameBottomSheet(
 fun PhotoConfirmationBottomSheet(
     hasExistingPhoto: Boolean = false,
     userBalance: Int,
+    selectedLanguageCode: String = "en",
     onDismiss: () -> Unit,
     onAddCoins: () -> Unit,
     onRemovePhoto: () -> Unit = {},
     onConfirm: (cost: Int) -> Unit
 ) {
+    val strings = getAppStrings(selectedLanguageCode)
     val cost = 59
 
     ModalBottomSheet(
@@ -139,9 +141,9 @@ fun PhotoConfirmationBottomSheet(
         dragHandle = null
     ) {
         Column(modifier = Modifier.padding(24.dp).navigationBarsPadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Update Profile Photo", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+            Text(strings.updateProfilePhoto, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Changing your profile picture costs coins.", fontSize = 14.sp, color = Color.Gray)
+            Text(strings.changePhotoCostNotice, fontSize = 14.sp, color = Color.Gray)
             
             Spacer(modifier = Modifier.height(20.dp))
             
@@ -152,11 +154,11 @@ fun PhotoConfirmationBottomSheet(
                 border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
             ) {
                 Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Text("Upload Cost:", fontSize = 15.sp, color = TrueLineDarkBg)
+                    Text(strings.uploadCost, fontSize = 15.sp, color = TrueLineDarkBg)
                     Spacer(modifier = Modifier.width(10.dp))
                     CoinLogo(size = 22.dp)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("$cost Coins", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
+                    Text("$cost ${strings.coins}", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
                 }
             }
 
@@ -171,10 +173,7 @@ fun PhotoConfirmationBottomSheet(
                 colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Choose Photo (Cost: ", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
-                    CoinLogo(size = 16.dp)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("$cost)", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                    Text(strings.choosePhotoCost.replace("%d", "$cost"), fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 }
             }
 
@@ -196,7 +195,7 @@ fun PhotoConfirmationBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Remove Current Photo",
+                            strings.removeCurrentPhoto,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFDC2626),
                             fontSize = 15.sp
@@ -206,7 +205,7 @@ fun PhotoConfirmationBottomSheet(
             }
             
             TextButton(onClick = onDismiss, modifier = Modifier.padding(top = 8.dp)) {
-                Text("Cancel", color = Color.Gray)
+                Text(strings.cancel, color = Color.Gray)
             }
         }
     }
@@ -216,11 +215,14 @@ fun PhotoConfirmationBottomSheet(
 @Composable
 fun PhotoSourcePickerBottomSheet(
     hasExistingPhoto: Boolean = false,
+    selectedLanguageCode: String = "en",
     onDismiss: () -> Unit,
     onChooseFromGallery: () -> Unit,
     onTakeSelfie: () -> Unit,
     onRemovePhoto: () -> Unit = {}
 ) {
+    val strings = getAppStrings(selectedLanguageCode)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -238,7 +240,7 @@ fun PhotoSourcePickerBottomSheet(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Select Photo Source", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                Text(strings.selectPhotoSource, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.Gray)
                 }
@@ -246,7 +248,7 @@ fun PhotoSourcePickerBottomSheet(
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Choose how you want to update your profile picture.",
+                strings.chooseHowToUpdatePhoto,
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth()
@@ -277,8 +279,8 @@ fun PhotoSourcePickerBottomSheet(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Choose Photo from Gallery", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
-                        Text("Select an existing photo from library", fontSize = 12.sp, color = Color.Gray)
+                        Text(strings.chooseFromGallery, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
+                        Text(strings.chooseFromGallerySubtitle, fontSize = 12.sp, color = Color.Gray)
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                 }
@@ -309,8 +311,8 @@ fun PhotoSourcePickerBottomSheet(
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Take a Selfie", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
-                        Text("Capture a new selfie using camera", fontSize = 12.sp, color = Color.Gray)
+                        Text(strings.takeASelfie, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TrueLineDarkBg)
+                        Text(strings.takeASelfieSubtitle, fontSize = 12.sp, color = Color.Gray)
                     }
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                 }
@@ -342,8 +344,8 @@ fun PhotoSourcePickerBottomSheet(
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Remove Current Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFDC2626))
-                            Text("Reset to default avatar", fontSize = 12.sp, color = Color.Gray)
+                            Text(strings.removeCurrentPhoto, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFDC2626))
+                            Text(strings.resetToDefaultAvatar, fontSize = 12.sp, color = Color.Gray)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
@@ -353,7 +355,7 @@ fun PhotoSourcePickerBottomSheet(
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
+                Text(strings.cancel, color = Color.Gray)
             }
         }
     }
@@ -365,11 +367,13 @@ fun PhotoPreviewBottomSheet(
     photoPath: String,
     userBalance: Int,
     isCamera: Boolean = true,
+    selectedLanguageCode: String = "en",
     onDismiss: () -> Unit,
     onRetake: () -> Unit,
     onAddCoins: () -> Unit,
     onUpload: () -> Unit
 ) {
+    val strings = getAppStrings(selectedLanguageCode)
     val cost = 59
 
     ModalBottomSheet(
@@ -390,7 +394,7 @@ fun PhotoPreviewBottomSheet(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    if (isCamera) "Preview Selfie" else "Preview Photo",
+                    if (isCamera) strings.previewSelfie else strings.previewPhoto,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = TrueLineDarkBg
@@ -423,11 +427,11 @@ fun PhotoPreviewBottomSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Text("Upload Cost:", fontSize = 15.sp, color = TrueLineDarkBg)
+                    Text(strings.uploadCost, fontSize = 15.sp, color = TrueLineDarkBg)
                     Spacer(modifier = Modifier.width(10.dp))
                     CoinLogo(size = 22.dp)
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("$cost Coins", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
+                    Text("$cost ${strings.coins}", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
                 }
             }
 
@@ -455,7 +459,7 @@ fun PhotoPreviewBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            if (isCamera) "Retake" else "Change",
+                            if (isCamera) strings.retake else strings.change,
                             fontWeight = FontWeight.Bold,
                             color = TrueLinePrimary,
                             fontSize = 15.sp
@@ -481,7 +485,7 @@ fun PhotoPreviewBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            "Upload",
+                            strings.upload,
                             fontWeight = FontWeight.Bold,
                             color = TrueLineDarkBg,
                             fontSize = 15.sp
@@ -493,7 +497,7 @@ fun PhotoPreviewBottomSheet(
             Spacer(modifier = Modifier.height(8.dp))
 
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color.Gray)
+                Text(strings.cancel, color = Color.Gray)
             }
         }
     }

@@ -35,10 +35,12 @@ import com.example.truelineapp.ui.TrueLineWaveformLoader
 fun ChatListScreen(
     conversations: List<ChatConversationData>,
     isLoading: Boolean,
+    selectedLanguageCode: String = "en",
     onRefresh: () -> Unit,
     onChatClick: (ChatConversationData) -> Unit,
     onBrowseListeners: () -> Unit = {}
 ) {
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
     var searchQuery by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
@@ -79,7 +81,7 @@ fun ChatListScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Messages",
+                            text = strings.chatsTitle,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             color = TrueLineDarkBg
@@ -166,7 +168,7 @@ fun ChatListScreen(
                             decorationBox = { innerTextField ->
                                 if (searchQuery.isEmpty()) {
                                     Text(
-                                        text = "Search chats or listeners...",
+                                        text = strings.searchChatsPlaceholder,
                                         fontSize = 14.sp,
                                         color = Color(0xFF94A3B8)
                                     )
@@ -286,7 +288,7 @@ fun ChatListScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     Text(
-                        text = if (searchQuery.isNotBlank()) "No matching conversations" else "No Conversations Yet",
+                        text = if (searchQuery.isNotBlank()) "No matching conversations" else strings.noConversationsYet,
                         fontSize = 19.sp,
                         fontWeight = FontWeight.Bold,
                         color = TrueLineDarkBg
@@ -313,7 +315,7 @@ fun ChatListScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
                     ) {
                         Text(
-                            text = "Browse Listeners",
+                            text = strings.browseListeners,
                             fontWeight = FontWeight.Bold,
                             color = TrueLineDarkBg,
                             fontSize = 14.sp

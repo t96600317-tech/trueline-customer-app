@@ -86,6 +86,10 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
         userPhotoPath = storage.getUserPhoto()
         walletBalance = storage.getWalletBalance() ?: 1000.0
+        val savedLang = storage.getLanguage()
+        if (!savedLang.isNullOrBlank()) {
+            selectedLanguage = savedLang
+        }
         isFirstTimeNameChange = !storage.isNameChangedBefore()
         checkAutoLogin()
         fetchListeners()
@@ -178,10 +182,17 @@ class MainViewModel(private val scope: CoroutineScope) {
             isFirstTimeNameChange = !storage.isNameChangedBefore()
 
             val res = repository.getUserProfile()
+            val savedLang = storage.getLanguage()
+            if (!savedLang.isNullOrBlank()) {
+                selectedLanguage = savedLang
+            } else if (res.success && res.data != null && res.data.user.language_pref.isNotBlank()) {
+                selectedLanguage = res.data.user.language_pref
+                storage.saveLanguage(selectedLanguage)
+            }
+
             isProfileLoading = false
             if (res.success && res.data != null) {
                 walletBalance = if (savedBalance != null) savedBalance else if (res.data.balance <= 0.0) 1000.0 else res.data.balance
-                selectedLanguage = res.data.user.language_pref
                 userId = res.data.user.id.take(8).uppercase()
                 try {
                     com.example.truelineapp.call.getCallService().initialize(
@@ -262,6 +273,8 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     fun updateLanguage(langCode: String) {
         selectedLanguage = langCode
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        storage.saveLanguage(langCode)
         scope.launch {
             repository.updateLanguagePreference(langCode)
         }

@@ -32,6 +32,8 @@ fun LanguageSelectionBottomSheet(
         Language("mr", "Marathi", "मराठी")
     )
 
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
@@ -44,7 +46,7 @@ fun LanguageSelectionBottomSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Language Preference",
+                text = strings.languagePreference,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = TrueLineDarkBg

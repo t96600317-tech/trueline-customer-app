@@ -184,6 +184,7 @@ fun App() {
                         isProcessing = viewModel.isPaymentProcessing,
                         transactions = viewModel.transactions,
                         isTransactionsLoading = viewModel.isTransactionsLoading,
+                        selectedLanguageCode = viewModel.selectedLanguage,
                         onBack = { navController.popBackStack() },
                         onRecharge = { paise, coins ->
                             viewModel.initiateRecharge(paise, coins)
@@ -311,6 +312,7 @@ fun MainScreen(
     onConnectToListener: (String) -> Unit,
     onLogout: () -> Unit = {}
 ) {
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
     var searchQuery by remember { mutableStateOf(searchQueryInitial) }
     val languages = listOf("All", "Hindi", "Bhojpuri", "Bengali", "Tamil", "Telugu", "Marathi", "Punjabi")
     
@@ -529,13 +531,13 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Outlined.Chat,
-                                    contentDescription = "Message",
+                                    contentDescription = strings.chatTab,
                                     tint = TextPrimary,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Message",
+                                    text = strings.chatTab,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = TextPrimary,
@@ -572,13 +574,13 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Call,
-                                    contentDescription = "Call",
+                                    contentDescription = strings.callTab,
                                     tint = Color.White,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Call",
+                                    text = strings.callTab,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -673,8 +675,8 @@ fun MainScreen(
                     NavigationBarItem(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
-                        icon = { Icon(if (selectedTab == 0) Icons.Filled.Call else Icons.Outlined.Call, contentDescription = "Call") },
-                        label = { Text("Call", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium) },
+                        icon = { Icon(if (selectedTab == 0) Icons.Filled.Call else Icons.Outlined.Call, contentDescription = strings.callTab) },
+                        label = { Text(strings.callTab, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Primary,
                             selectedTextColor = Primary,
@@ -700,17 +702,17 @@ fun MainScreen(
                                 ) {
                                     Icon(
                                         imageVector = if (selectedTab == 1) Icons.AutoMirrored.Filled.Chat else Icons.AutoMirrored.Outlined.Chat,
-                                        contentDescription = "Chat"
+                                        contentDescription = strings.chatTab
                                     )
                                 }
                             } else {
                                 Icon(
                                     imageVector = if (selectedTab == 1) Icons.AutoMirrored.Filled.Chat else Icons.AutoMirrored.Outlined.Chat,
-                                    contentDescription = "Chat"
+                                    contentDescription = strings.chatTab
                                 )
                             }
                         },
-                        label = { Text("Chat", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium) },
+                        label = { Text(strings.chatTab, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Primary,
                             selectedTextColor = Primary,
@@ -722,8 +724,8 @@ fun MainScreen(
                     NavigationBarItem(
                         selected = selectedTab == 2,
                         onClick = { selectedTab = 2 },
-                        icon = { Icon(Icons.Outlined.Person, contentDescription = "Profile") },
-                        label = { Text("Profile", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium) },
+                        icon = { Icon(Icons.Outlined.Person, contentDescription = strings.profileTab) },
+                        label = { Text(strings.profileTab, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = Primary,
                             selectedTextColor = Primary,
@@ -749,7 +751,7 @@ fun MainScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 10.dp),
-                        placeholder = { Text("Search listeners by name or language...", color = TextMuted, fontSize = 14.sp) },
+                        placeholder = { Text(strings.searchListenersPlaceholder, color = TextMuted, fontSize = 14.sp) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted) },
                         shape = RoundedCornerShape(14.dp),
                         singleLine = true,
@@ -772,12 +774,13 @@ fun MainScreen(
                     ) {
                         items(languages) { lang ->
                             val isSelected = selectedDiscoverLanguage == lang
+                            val displayChipLabel = if (lang == "All") strings.allFilter else lang
                             FilterChip(
                                 selected = isSelected,
                                 onClick = { onDiscoverLanguageSelected(lang) },
                                 label = {
                                     Text(
-                                        text = lang,
+                                        text = displayChipLabel,
                                         fontSize = 13.sp,
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                     )
@@ -815,6 +818,7 @@ fun MainScreen(
                                 ExactReplicaCard(
                                     partner = partner, 
                                     isPlaying = playingAudioUrl == partner.audio_sample_url,
+                                    selectedLanguageCode = selectedLanguageCode,
                                     onCardClick = { 
                                         selectedProfilePartner = partner
                                     },
@@ -836,6 +840,7 @@ fun MainScreen(
                     ChatListScreen(
                         conversations = conversations,
                         isLoading = isChatListLoading,
+                        selectedLanguageCode = selectedLanguageCode,
                         onRefresh = onRefreshChatList,
                         onChatClick = onChatClick,
                         onBrowseListeners = { selectedTab = 0 }
@@ -865,10 +870,12 @@ fun MainScreen(
 fun ExactReplicaCard(
     partner: ListenerDiscovery, 
     isPlaying: Boolean,
+    selectedLanguageCode: String = "en",
     onCardClick: () -> Unit,
     onPlayClick: () -> Unit,
     onConnectClick: () -> Unit
 ) {
+    val strings = com.example.truelineapp.i18n.getAppStrings(selectedLanguageCode)
     // OUTER CARD
     Surface(
         onClick = onCardClick,
@@ -918,7 +925,7 @@ fun ExactReplicaCard(
                         .offset(x = 2.dp, y = (-2).dp)
                 ) {
                     Text(
-                        text = if (isOnline) "ONLINE" else "OFFLINE",
+                        text = if (isOnline) strings.onlineStatus else strings.offlineStatus,
                         color = Color.White,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
@@ -987,7 +994,7 @@ fun ExactReplicaCard(
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = "Play voice intro",
+                            contentDescription = strings.playVoiceIntro,
                             tint = Primary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -1037,7 +1044,7 @@ fun ExactReplicaCard(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Connect",
+                                text = strings.connectCall,
                                 color = Dark,
                                 fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold
