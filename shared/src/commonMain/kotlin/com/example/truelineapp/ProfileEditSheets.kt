@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -120,9 +121,11 @@ fun EditNameBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoConfirmationBottomSheet(
+    hasExistingPhoto: Boolean = false,
     userBalance: Int,
     onDismiss: () -> Unit,
     onAddCoins: () -> Unit,
+    onRemovePhoto: () -> Unit = {},
     onConfirm: (cost: Int) -> Unit
 ) {
     val cost = 59
@@ -138,7 +141,7 @@ fun PhotoConfirmationBottomSheet(
             Spacer(modifier = Modifier.height(8.dp))
             Text("Changing your profile picture costs coins.", fontSize = 14.sp, color = Color.Gray)
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             
             Surface(
                 color = TrueLineLightBg,
@@ -146,22 +149,22 @@ fun PhotoConfirmationBottomSheet(
                 modifier = Modifier.fillMaxWidth(),
                 border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.2f))
             ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-                    Text("Total Cost:", fontSize = 16.sp, color = TrueLineDarkBg)
-                    Spacer(modifier = Modifier.width(12.dp))
-                    CoinLogo(size = 24.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("$cost Coins", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
+                Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Text("Upload Cost:", fontSize = 15.sp, color = TrueLineDarkBg)
+                    Spacer(modifier = Modifier.width(10.dp))
+                    CoinLogo(size = 22.dp)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("$cost Coins", fontSize = 19.sp, fontWeight = FontWeight.ExtraBold, color = TrueLinePrimary)
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     if (userBalance >= cost) onConfirm(cost) else onAddCoins()
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
+                modifier = Modifier.fillMaxWidth().height(54.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = TrueLineAccent)
             ) {
@@ -170,6 +173,46 @@ fun PhotoConfirmationBottomSheet(
                     CoinLogo(size = 16.dp)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("$cost & Choose Photo", fontWeight = FontWeight.Bold, color = TrueLineDarkBg)
+                }
+            }
+
+            if (hasExistingPhoto) {
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = onRemovePhoto,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.35f)),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFFEF2F2))
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.DeleteOutline,
+                            contentDescription = "Remove Photo",
+                            tint = Color(0xFFDC2626),
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Remove Current Photo",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFDC2626),
+                            fontSize = 15.sp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            color = Color(0xFFDC2626).copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                "FREE",
+                                color = Color(0xFFDC2626),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
             }
             
@@ -183,9 +226,11 @@ fun PhotoConfirmationBottomSheet(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoSourcePickerBottomSheet(
+    hasExistingPhoto: Boolean = false,
     onDismiss: () -> Unit,
     onChooseFromGallery: () -> Unit,
-    onTakeSelfie: () -> Unit
+    onTakeSelfie: () -> Unit,
+    onRemovePhoto: () -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -282,6 +327,55 @@ fun PhotoSourcePickerBottomSheet(
                 }
             }
 
+            if (hasExistingPhoto) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Option 3: Remove Current Photo (Free)
+                Surface(
+                    onClick = onRemovePhoto,
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFFFEF2F2),
+                    border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFDC2626).copy(alpha = 0.12f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.DeleteOutline, contentDescription = null, tint = Color(0xFFDC2626))
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("Remove Current Photo", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFDC2626))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    color = Color(0xFFDC2626).copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        "FREE",
+                                        color = Color(0xFFDC2626),
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            Text("Reset to default avatar", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(onClick = onDismiss) {
@@ -290,4 +384,3 @@ fun PhotoSourcePickerBottomSheet(
         }
     }
 }
-

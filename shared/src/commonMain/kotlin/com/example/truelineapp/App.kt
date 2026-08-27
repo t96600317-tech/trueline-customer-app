@@ -146,6 +146,7 @@ fun App() {
                         },
                         onUpdateName = { name, cost -> viewModel.updateUserName(name, cost) },
                         onUpdatePhoto = { path, cost -> viewModel.updateUserPhoto(path, cost) },
+                        onRemovePhoto = { viewModel.removeUserPhoto() },
                         onLanguageUpdate = { code ->
                             viewModel.updateLanguage(code)
                         },
@@ -301,6 +302,7 @@ fun MainScreen(
     onAddCoins: (Int) -> Unit,
     onUpdateName: (String, Int) -> Unit,
     onUpdatePhoto: (String, Int) -> Unit,
+    onRemovePhoto: () -> Unit,
     onLanguageUpdate: (String) -> Unit,
     onSearchChanged: (String) -> Unit,
     onDiscoverLanguageSelected: (String) -> Unit,
@@ -850,6 +852,7 @@ fun MainScreen(
                         onAddCoins = { showAddCoinsSheet = true },
                         onUpdateName = onUpdateName,
                         onUpdatePhoto = onUpdatePhoto,
+                        onRemovePhoto = onRemovePhoto,
                         onLanguageClick = { showLanguageSheet = true }
                     )
                 }

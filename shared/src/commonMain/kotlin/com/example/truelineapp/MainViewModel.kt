@@ -204,6 +204,19 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
+    fun removeUserPhoto() {
+        val oldPath = userPhotoPath
+        userPhotoPath = null
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        storage.saveUserPhoto("")
+        if (!oldPath.isNullOrBlank()) {
+            try {
+                val file = java.io.File(oldPath)
+                if (file.exists()) file.delete()
+            } catch (e: Exception) {}
+        }
+    }
+
     fun updateUserName(newName: String, cost: Int) {
         if (walletBalance >= cost) {
             if (cost > 0) {

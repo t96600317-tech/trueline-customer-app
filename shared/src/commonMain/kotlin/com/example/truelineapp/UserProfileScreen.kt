@@ -34,12 +34,14 @@ fun UserProfileScreen(
     onAddCoins: () -> Unit,
     onUpdateName: (newName: String, cost: Int) -> Unit,
     onUpdatePhoto: (photoPath: String, cost: Int) -> Unit,
+    onRemovePhoto: () -> Unit,
     onLanguageClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     var showNameEdit by remember { mutableStateOf(false) }
     var showPhotoConfirm by remember { mutableStateOf(false) }
     var showPhotoSourcePicker by remember { mutableStateOf(false) }
+    val hasExistingPhoto = !userPhotoPath.isNullOrBlank()
 
     if (showNameEdit) {
         EditNameBottomSheet(
@@ -60,11 +62,16 @@ fun UserProfileScreen(
 
     if (showPhotoConfirm) {
         PhotoConfirmationBottomSheet(
+            hasExistingPhoto = hasExistingPhoto,
             userBalance = walletBalance,
             onDismiss = { showPhotoConfirm = false },
             onAddCoins = {
                 showPhotoConfirm = false
                 onAddCoins()
+            },
+            onRemovePhoto = {
+                showPhotoConfirm = false
+                onRemovePhoto()
             },
             onConfirm = { cost ->
                 showPhotoConfirm = false
@@ -87,6 +94,7 @@ fun UserProfileScreen(
 
     if (showPhotoSourcePicker) {
         PhotoSourcePickerBottomSheet(
+            hasExistingPhoto = hasExistingPhoto,
             onDismiss = { showPhotoSourcePicker = false },
             onChooseFromGallery = {
                 showPhotoSourcePicker = false
@@ -95,6 +103,10 @@ fun UserProfileScreen(
             onTakeSelfie = {
                 showPhotoSourcePicker = false
                 launchCamera()
+            },
+            onRemovePhoto = {
+                showPhotoSourcePicker = false
+                onRemovePhoto()
             }
         )
     }
