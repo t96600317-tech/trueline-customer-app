@@ -410,4 +410,17 @@ class CustomerRepository(
             ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to update profile name"))
         }
     }
+
+    suspend fun sendHeartbeat(): ApiResponse<Unit> {
+        val token = getAuthToken() ?: return ApiResponse(false)
+        return try {
+            executeWithFallback { baseUrl ->
+                client.post("$baseUrl/user/heartbeat") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body()
+            }
+        } catch (e: Exception) {
+            ApiResponse(false)
+        }
+    }
 }

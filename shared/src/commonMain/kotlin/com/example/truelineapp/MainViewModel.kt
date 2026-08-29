@@ -93,6 +93,18 @@ class MainViewModel(private val scope: CoroutineScope) {
         isFirstTimeNameChange = !storage.isNameChangedBefore()
         checkAutoLogin()
         fetchListeners()
+
+        // Live Presence Heartbeat Loop (Pings every 8 seconds while logged in)
+        scope.launch {
+            while (true) {
+                if (authToken != null) {
+                    try {
+                        repository.sendHeartbeat()
+                    } catch (_: Exception) {}
+                }
+                delay(8000)
+            }
+        }
     }
 
     private fun checkAutoLogin() {
