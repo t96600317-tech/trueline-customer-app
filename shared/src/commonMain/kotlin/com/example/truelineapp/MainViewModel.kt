@@ -15,6 +15,7 @@ import com.example.truelineapp.network.customer.TransactionItem
 import com.example.truelineapp.payment.PaymentServiceWrapper
 import com.example.truelineapp.otp.Msg91OtpResult
 import com.example.truelineapp.otp.getMsg91OtpGateway
+import com.example.truelineapp.call.callConnectionDiagnosticForDisplay
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -645,8 +646,9 @@ class MainViewModel(private val scope: CoroutineScope) {
         activeSessionId = null
         currentCallingPartner = null
         showPostCallRating = false
-        errorMessage = message
-        voiceCallErrorMessage = message
+        val diagnostic = callConnectionDiagnosticForDisplay(message)
+        errorMessage = diagnostic
+        voiceCallErrorMessage = diagnostic
     }
 
     fun dismissVoiceCallError() {

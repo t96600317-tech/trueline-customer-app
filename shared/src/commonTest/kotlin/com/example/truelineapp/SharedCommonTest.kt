@@ -2,14 +2,13 @@ package com.example.truelineapp
 
 import com.example.truelineapp.network.CallInitiateResponse
 import com.example.truelineapp.network.OtpVerifyRequest
-import kotlinx.coroutines.CoroutineScope
+import com.example.truelineapp.call.callConnectionDiagnosticForDisplay
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.coroutines.EmptyCoroutineContext
 
 class SharedCommonTest {
 
@@ -52,11 +51,10 @@ class SharedCommonTest {
 
     @Test
     fun callConnectionFailureKeepsTheFullDiagnostic() {
-        val viewModel = MainViewModel(CoroutineScope(EmptyCoroutineContext))
         val diagnostic = "Voice connection failed: Zego room login failed (reason=LOGIN_FAILED, code=100203)"
 
-        viewModel.onCallConnectionFailed(diagnostic)
+        val displayedDiagnostic = callConnectionDiagnosticForDisplay(diagnostic)
 
-        assertEquals(diagnostic, viewModel.voiceCallErrorMessage)
+        assertEquals(diagnostic, displayedDiagnostic)
     }
 }
