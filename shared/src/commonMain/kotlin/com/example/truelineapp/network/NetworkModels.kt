@@ -78,7 +78,9 @@ data class CallInitiateRequest(
 data class CallInitiateResponse(
     val session_id: String,
     val room_id: String,
-    val user_token: String
+    val user_token: String,
+    val zego_user_id: String = "",
+    val zego_config_fingerprint: String = ""
 )
 
 @Serializable

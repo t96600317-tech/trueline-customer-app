@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Notifications
@@ -157,12 +158,14 @@ fun App() {
                         onPlayAudio = { viewModel.toggleAudioPlayback(it) },
                         onNotifyWhenOnline = { listenerId -> viewModel.notifyWhenOnline(listenerId) },
                         onConnectToListener = { listenerId ->
-                            viewModel.connectToListener(listenerId) { roomId, token, targetId, targetName ->
+                            viewModel.connectToListener(listenerId) { roomId, token, targetId, targetName, signedUserId, zegoConfigFingerprint ->
                                 com.example.truelineapp.call.getCallService().startAudioCall(
                                     roomId = roomId,
                                     targetUserId = targetId,
                                     targetUserName = targetName,
                                     token = token,
+                                    signedUserId = signedUserId,
+                                    zegoConfigFingerprint = zegoConfigFingerprint,
                                     onCallEnd = viewModel::onCallFinished,
                                     onCallStartFailed = viewModel::onCallConnectionFailed
                                 )
@@ -252,12 +255,14 @@ fun App() {
                         onLoadMessages = { viewModel.openChatRoom(id) },
                         onSendMessage = { content -> viewModel.sendChatMessage(id, content) },
                         onCallClick = {
-                            viewModel.connectToListener(id) { roomId, token, targetId, targetName ->
+                            viewModel.connectToListener(id) { roomId, token, targetId, targetName, signedUserId, zegoConfigFingerprint ->
                                 com.example.truelineapp.call.getCallService().startAudioCall(
                                     roomId = roomId,
                                     targetUserId = targetId,
                                     targetUserName = targetName,
                                     token = token,
+                                    signedUserId = signedUserId,
+                                    zegoConfigFingerprint = zegoConfigFingerprint,
                                     onCallEnd = viewModel::onCallFinished,
                                     onCallStartFailed = viewModel::onCallConnectionFailed
                                 )
@@ -272,6 +277,23 @@ fun App() {
                     )
                 }
             }
+        }
+
+        viewModel.voiceCallErrorMessage?.let { message ->
+            AlertDialog(
+                onDismissRequest = viewModel::dismissVoiceCallError,
+                title = { Text("Voice connection failed") },
+                text = {
+                    SelectionContainer {
+                        Text(message)
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = viewModel::dismissVoiceCallError) {
+                        Text("Dismiss")
+                    }
+                }
+            )
         }
     }
 }

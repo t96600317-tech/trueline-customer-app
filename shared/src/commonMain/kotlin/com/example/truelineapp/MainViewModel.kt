@@ -76,6 +76,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     var showPostCallRating by mutableStateOf(false)
     var lastCallDuration by mutableStateOf(0)
     var lastCallCoinsDeductedMicros by mutableStateOf(0L)
+    var voiceCallErrorMessage by mutableStateOf<String?>(null)
     private var callEventsJob: Job? = null
     private var isEndingCall = false
 
@@ -552,12 +553,20 @@ class MainViewModel(private val scope: CoroutineScope) {
     // --- Calling Methods ---
     fun connectToListener(
         partnerId: String,
-        onCallReady: (roomId: String, token: String, targetUserId: String, targetUserName: String) -> Unit = { _, _, _, _ -> }
+        onCallReady: (
+            roomId: String,
+            token: String,
+            targetUserId: String,
+            targetUserName: String,
+            signedUserId: String,
+            zegoConfigFingerprint: String
+        ) -> Unit = { _, _, _, _, _, _ -> }
     ) {
         val partner = partners.find { it.id == partnerId }
         currentCallingPartner = partner
         isLoading = true
         errorMessage = null
+        voiceCallErrorMessage = null
 
         scope.launch {
             val res = repository.initiateCall(partnerId)
@@ -573,7 +582,9 @@ class MainViewModel(private val scope: CoroutineScope) {
                     res.data.room_id,
                     res.data.user_token,
                     partnerId,
-                    partner?.name ?: "Listener"
+                    partner?.name ?: "Listener",
+                    res.data.zego_user_id,
+                    res.data.zego_config_fingerprint
                 )
             } else {
                 errorMessage = res.error?.message ?: "Call initiation failed"
@@ -617,6 +628,11 @@ class MainViewModel(private val scope: CoroutineScope) {
         currentCallingPartner = null
         showPostCallRating = false
         errorMessage = message
+        voiceCallErrorMessage = message
+    }
+
+    fun dismissVoiceCallError() {
+        voiceCallErrorMessage = null
     }
 
     fun submitRating(rating: Int, tags: List<String>, isFavorite: Boolean) {

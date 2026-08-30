@@ -7,6 +7,8 @@ expect class CallServiceWrapper {
         targetUserId: String,
         targetUserName: String,
         token: String = "",
+        signedUserId: String = "",
+        zegoConfigFingerprint: String = "",
         onCallEnd: (durationSeconds: Int) -> Unit = {},
         onCallStartFailed: (message: String) -> Unit = {}
     )

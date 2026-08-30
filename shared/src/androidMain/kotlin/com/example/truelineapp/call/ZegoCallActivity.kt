@@ -27,6 +27,7 @@ class ZegoCallActivity : AppCompatActivity() {
 
     private var appId: Long = 1939552281L
     private var zegoToken: String = ""
+    private var zegoConfigFingerprint: String = ""
     private var userId: String = ""
     private var userName: String = ""
     private var callId: String = ""
@@ -71,6 +72,7 @@ class ZegoCallActivity : AppCompatActivity() {
 
         appId = intent.getLongExtra("APP_ID", 1939552281L)
         zegoToken = intent.getStringExtra("ZEGO_TOKEN").orEmpty()
+        zegoConfigFingerprint = intent.getStringExtra("ZEGO_CONFIG_FINGERPRINT").orEmpty()
         
         val rawUserId = intent.getStringExtra("USER_ID") ?: ("user_" + System.currentTimeMillis())
         userId = rawUserId.replace("-", "_").filter { it.isLetterOrDigit() || it == '_' }.ifBlank { "user_${System.currentTimeMillis()}" }.take(64)
@@ -146,7 +148,11 @@ class ZegoCallActivity : AppCompatActivity() {
                 .replace(containerId, fragment)
                 .commitAllowingStateLoss()
         } catch (e: Exception) {
-            reportConnectionFailure("Unable to create the Zego call screen: ${e.javaClass.simpleName}")
+            val detail = buildString {
+                append("Unable to create the Zego call screen: ${e.javaClass.simpleName}")
+                e.message?.takeIf { it.isNotBlank() }?.let { append(" ($it)") }
+            }
+            reportConnectionFailure(detail)
         }
     }
 
@@ -182,7 +188,12 @@ class ZegoCallActivity : AppCompatActivity() {
 
         val isDebugBuild = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
         val message = if (isDebugBuild) {
-            "Voice connection failed: $detail"
+            buildString {
+                append("Voice connection failed: $detail")
+                if (zegoConfigFingerprint.isNotBlank()) {
+                    append("\nBackend Zego configuration: $zegoConfigFingerprint")
+                }
+            }
         } else {
             "We couldn't connect the voice call. Please try again."
         }

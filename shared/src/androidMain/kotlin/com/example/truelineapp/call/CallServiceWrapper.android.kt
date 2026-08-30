@@ -32,6 +32,8 @@ actual class CallServiceWrapper(private val context: Context) {
         targetUserId: String,
         targetUserName: String,
         token: String,
+        signedUserId: String,
+        zegoConfigFingerprint: String,
         onCallEnd: (durationSeconds: Int) -> Unit,
         onCallStartFailed: (message: String) -> Unit
     ) {
@@ -50,10 +52,21 @@ actual class CallServiceWrapper(private val context: Context) {
             initialize(currentAppId, "user_" + System.currentTimeMillis(), savedName.ifBlank { "User" })
         }
 
-        launchDirectCall(roomId, safeTargetName, token)
+        if (signedUserId.isNotBlank()) {
+            currentUserId = signedUserId.replace("-", "_")
+                .filter { it.isLetterOrDigit() || it == '_' }
+                .take(64)
+        }
+
+        launchDirectCall(roomId, safeTargetName, token, zegoConfigFingerprint)
     }
 
-    private fun launchDirectCall(roomId: String, safeTargetName: String, token: String) {
+    private fun launchDirectCall(
+        roomId: String,
+        safeTargetName: String,
+        token: String,
+        zegoConfigFingerprint: String
+    ) {
         val storage = com.example.truelineapp.storage.getSessionStorage()
         val savedName = storage.getUserName() ?: ""
         val effectiveUserName = currentUserName.ifBlank { savedName.ifBlank { "User" } }
@@ -64,6 +77,7 @@ actual class CallServiceWrapper(private val context: Context) {
             putExtra("USER_NAME", effectiveUserName)
             putExtra("CALL_ID", roomId)
             putExtra("ZEGO_TOKEN", token)
+            putExtra("ZEGO_CONFIG_FINGERPRINT", zegoConfigFingerprint)
             putExtra("TARGET_USER_NAME", safeTargetName)
         }
         context.startActivity(intent)
