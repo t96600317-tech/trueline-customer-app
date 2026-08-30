@@ -33,7 +33,9 @@ data class OtpResponse(
 data class OtpVerifyRequest(
     val phone: String,
     val otp: String,
-    val role: String = "user"
+    val role: String = "user",
+    val request_id: String? = null,
+    val msg91_access_token: String? = null
 )
 
 @Serializable

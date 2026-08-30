@@ -13,6 +13,10 @@ class MainActivity : AppCompatActivity() {
         
         // Initialize Android Session Storage for persistent customer JWT
         com.example.truelineapp.storage.initCustomerSessionStorage(this)
+        com.example.truelineapp.otp.initMsg91Otp(
+            widgetId = BuildConfig.MSG91_WIDGET_ID,
+            authToken = BuildConfig.MSG91_AUTH_TOKEN
+        )
         com.example.truelineapp.audio.initAudioPlayer(this)
         com.example.truelineapp.call.initCallService(this)
 

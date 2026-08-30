@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
@@ -154,6 +155,7 @@ fun App() {
                         onDiscoverLanguageSelected = { viewModel.onDiscoverLanguageSelected(it) },
                         onRefreshChatList = { viewModel.fetchConversations() },
                         onPlayAudio = { viewModel.toggleAudioPlayback(it) },
+                        onNotifyWhenOnline = { listenerId -> viewModel.notifyWhenOnline(listenerId) },
                         onConnectToListener = { listenerId ->
                             viewModel.connectToListener(listenerId) { roomId, token, targetId, targetName ->
                                 com.example.truelineapp.call.getCallService().startAudioCall(
@@ -307,6 +309,7 @@ fun MainScreen(
     onDiscoverLanguageSelected: (String) -> Unit,
     onRefreshChatList: () -> Unit,
     onPlayAudio: (url: String) -> Unit,
+    onNotifyWhenOnline: (String) -> Unit,
     onConnectToListener: (String) -> Unit,
     onLogout: () -> Unit = {}
 ) {
@@ -562,9 +565,7 @@ fun MainScreen(
                             onClick = {
                                 val p = partner
                                 if (isPartnerBusy) {
-                                    scope.launch {
-                                        userRepository.notifyWhenOnline(p.id)
-                                    }
+                                    onNotifyWhenOnline(p.id)
                                     selectedProfilePartner = null
                                 } else {
                                     selectedProfilePartner = null

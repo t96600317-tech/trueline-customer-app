@@ -13,6 +13,8 @@ import com.example.truelineapp.network.chat.ChatMessageData
 import com.example.truelineapp.network.customer.CustomerRepository
 import com.example.truelineapp.network.customer.TransactionItem
 import com.example.truelineapp.payment.PaymentServiceWrapper
+import com.example.truelineapp.otp.Msg91OtpResult
+import com.example.truelineapp.otp.getMsg91OtpGateway
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +32,8 @@ class MainViewModel(private val scope: CoroutineScope) {
     var otpCountdown by mutableStateOf(30)
     var canResendOtp by mutableStateOf(false)
     private var otpTimerJob: Job? = null
+    private val msg91Otp = getMsg91OtpGateway()
+    private var msg91RequestId: String? = null
 
     companion object {
         fun generateDefaultUsername(): String {
@@ -123,16 +127,28 @@ class MainViewModel(private val scope: CoroutineScope) {
     // --- Auth Methods ---
     fun sendOtp(phone: String, onSuccess: () -> Unit = {}) {
         currentPhoneNumber = phone
+        msg91RequestId = null
         isLoading = true
         errorMessage = null
         scope.launch {
-            val res = repository.requestOtp(phone)
-            isLoading = false
-            if (res.success) {
+            val msg91Result = if (msg91Otp.isConfigured) msg91Otp.sendOtp(phone) else null
+            if (msg91Result?.success == true) {
+                msg91RequestId = msg91Result.requestId
+                isLoading = false
                 startOtpTimer()
                 onSuccess()
+            } else if (msg91Result != null) {
+                isLoading = false
+                errorMessage = msg91Result.errorMessage ?: "Failed to send OTP. Please try again."
             } else {
-                errorMessage = res.error?.message ?: "Failed to send OTP. Please check your connection."
+                val res = repository.requestOtp(phone)
+                isLoading = false
+                if (res.success) {
+                    startOtpTimer()
+                    onSuccess()
+                } else {
+                    errorMessage = res.error?.message ?: "Failed to send OTP. Please check your connection."
+                }
             }
         }
     }
@@ -141,7 +157,29 @@ class MainViewModel(private val scope: CoroutineScope) {
         isLoading = true
         errorMessage = null
         scope.launch {
-            val res = repository.verifyOtp(phone, otp)
+            val msg91Result = if (msg91Otp.isConfigured) {
+                val requestId = msg91RequestId
+                if (requestId.isNullOrBlank()) {
+                    Msg91OtpResult(false, errorMessage = "Please request a new OTP.")
+                } else {
+                    msg91Otp.verifyOtp(requestId, otp)
+                }
+            } else {
+                null
+            }
+            if (msg91Result != null && !msg91Result.success) {
+                isLoading = false
+                errorMessage = msg91Result.errorMessage ?: "Invalid OTP. Please try again."
+                return@launch
+            }
+            if (msg91Result != null && msg91Result.accessToken.isNullOrBlank()) {
+                msg91RequestId = null
+                isLoading = false
+                errorMessage = "MSG91 verified the code but did not return an access token. Please request a new OTP."
+                return@launch
+            }
+
+            val res = repository.verifyOtp(phone, otp, msg91RequestId, msg91Result?.accessToken)
             isLoading = false
             if (res.success && res.data != null) {
                 authToken = res.data.token
@@ -158,7 +196,22 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     fun resendOtp() {
         if (canResendOtp && currentPhoneNumber.isNotBlank()) {
-            sendOtp(currentPhoneNumber)
+            val requestId = msg91RequestId
+            if (msg91Otp.isConfigured && !requestId.isNullOrBlank()) {
+                isLoading = true
+                errorMessage = null
+                scope.launch {
+                    val result = msg91Otp.retryOtp(requestId)
+                    isLoading = false
+                    if (result.success) {
+                        startOtpTimer()
+                    } else {
+                        errorMessage = result.errorMessage ?: "Failed to resend OTP. Please try again."
+                    }
+                }
+            } else {
+                sendOtp(currentPhoneNumber)
+            }
         }
     }
 
@@ -215,8 +268,7 @@ class MainViewModel(private val scope: CoroutineScope) {
                 userId = res.data.user.id.take(8).uppercase()
                 try {
                     com.example.truelineapp.call.getCallService().initialize(
-                        628007464L,
-                        "e7dffb8a9cb6a89f1fc2afddcc16f4ce4df9cd1e8ca346076161caf69cbd465e",
+                        1939552281L,
                         res.data.user.id,
                         userName
                     )
@@ -480,6 +532,15 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
+    fun notifyWhenOnline(listenerId: String) {
+        scope.launch {
+            val res = repository.notifyWhenOnline(listenerId)
+            if (!res.success) {
+                errorMessage = res.error?.message ?: "Could not register your notification request"
+            }
+        }
+    }
+
     // --- Calling Methods ---
     fun connectToListener(
         partnerId: String,
@@ -494,6 +555,10 @@ class MainViewModel(private val scope: CoroutineScope) {
             val res = repository.initiateCall(partnerId)
             isLoading = false
             if (res.success && res.data != null) {
+                if (res.data.user_token.isBlank() || res.data.room_id.isBlank()) {
+                    errorMessage = "Unable to get a secure voice-call token"
+                    return@launch
+                }
                 activeSessionId = res.data.session_id
                 startCallEventObserver(res.data.session_id)
                 onCallReady(

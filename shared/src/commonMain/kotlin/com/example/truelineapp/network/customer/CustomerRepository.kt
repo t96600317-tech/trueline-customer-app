@@ -133,12 +133,17 @@ class CustomerRepository(
         }
     }
 
-    suspend fun verifyOtp(phone: String, otp: String): ApiResponse<AuthResponse> {
+    suspend fun verifyOtp(
+        phone: String,
+        otp: String,
+        msg91RequestId: String? = null,
+        msg91AccessToken: String? = null
+    ): ApiResponse<AuthResponse> {
         val response: ApiResponse<AuthResponse> = try {
             executeWithFallback { baseUrl ->
                 client.post("$baseUrl/auth/otp/verify") {
                     contentType(ContentType.Application.Json)
-                    setBody(OtpVerifyRequest(phone, otp, "user"))
+                    setBody(OtpVerifyRequest(phone, otp, "user", msg91RequestId, msg91AccessToken))
                 }.body()
             }
         } catch (e: Exception) {

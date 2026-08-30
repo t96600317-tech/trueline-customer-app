@@ -1,21 +1,13 @@
 package com.example.truelineapp.call
 
 import android.app.Activity
-import android.app.Application
 import android.content.Context
 import android.content.Intent
-import com.zegocloud.uikit.plugin.common.PluginCallbackListener
-import com.zegocloud.uikit.plugin.invitation.ZegoInvitationType
 import com.zegocloud.uikit.prebuilt.call.ZegoUIKitPrebuiltCallService
-import com.zegocloud.uikit.prebuilt.call.invite.ZegoUIKitPrebuiltCallInvitationConfig
-import com.zegocloud.uikit.prebuilt.call.invite.ZegoUIKitPrebuiltCallInvitationService
-import com.zegocloud.uikit.service.defines.ZegoUIKitUser
 
 private var globalCallService: CallServiceWrapper? = null
-private var currentActivityRef: Activity? = null
 
 fun initCallService(activity: Activity) {
-    currentActivityRef = activity
     globalCallService = CallServiceWrapper(activity)
 }
 
@@ -25,36 +17,14 @@ actual fun getCallService(): CallServiceWrapper {
 
 actual class CallServiceWrapper(private val context: Context) {
 
-    private var currentAppId: Long = 628007464L
-    private var currentAppSign: String = "e7dffb8a9cb6a89f1fc2afddcc16f4ce4df9cd1e8ca346076161caf69cbd465e"
+    private var currentAppId: Long = 1939552281L
     private var currentUserId: String = ""
     private var currentUserName: String = ""
-    private var isInvitationServiceInit = false
 
-    actual fun initialize(appId: Long, appSign: String, userId: String, userName: String) {
+    actual fun initialize(appId: Long, userId: String, userName: String) {
         currentAppId = appId
-        currentAppSign = appSign
         currentUserId = userId.replace("-", "_").filter { it.isLetterOrDigit() || it == '_' }.ifBlank { "user_${System.currentTimeMillis()}" }.take(64)
         currentUserName = userName.trim().ifBlank { "User" }.take(64)
-
-        try {
-            val app = (context as? Activity)?.application 
-                ?: (context.applicationContext as? Application)
-            if (app != null && !isInvitationServiceInit) {
-                val config = ZegoUIKitPrebuiltCallInvitationConfig()
-                ZegoUIKitPrebuiltCallInvitationService.init(
-                    app,
-                    currentAppId,
-                    currentAppSign,
-                    currentUserId,
-                    currentUserName,
-                    config
-                )
-                isInvitationServiceInit = true
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     actual fun startAudioCall(
@@ -64,6 +34,7 @@ actual class CallServiceWrapper(private val context: Context) {
         token: String,
         onCallEnd: () -> Unit
     ) {
+        require(token.isNotBlank()) { "A Zego token is required to start a voice call" }
         ZegoCallActivity.onCallEndCallback = onCallEnd
 
         val safeTargetName = targetUserName.trim().ifBlank { "Listener" }.take(64)
@@ -73,36 +44,31 @@ actual class CallServiceWrapper(private val context: Context) {
             currentUserName = savedName
         }
 
-        // Ensure invitation service is active
-        if (!isInvitationServiceInit) {
-            val uid = currentUserId.ifBlank { "user_" + System.currentTimeMillis() }
-            val uname = currentUserName.ifBlank { savedName.ifBlank { "User" } }
-            initialize(currentAppId, currentAppSign, uid, uname)
+        if (currentUserId.isBlank()) {
+            initialize(currentAppId, "user_" + System.currentTimeMillis(), savedName.ifBlank { "User" })
         }
 
-        launchDirectCall(roomId, safeTargetName)
+        launchDirectCall(roomId, safeTargetName, token)
     }
 
-    private fun launchDirectCall(roomId: String, safeTargetName: String) {
+    private fun launchDirectCall(roomId: String, safeTargetName: String, token: String) {
         val storage = com.example.truelineapp.storage.getSessionStorage()
         val savedName = storage.getUserName() ?: ""
         val effectiveUserName = currentUserName.ifBlank { savedName.ifBlank { "User" } }
 
         val intent = Intent(context, ZegoCallActivity::class.java).apply {
             putExtra("APP_ID", currentAppId)
-            putExtra("APP_SIGN", currentAppSign)
             putExtra("USER_ID", currentUserId.ifBlank { "user_" + System.currentTimeMillis() })
             putExtra("USER_NAME", effectiveUserName)
             putExtra("CALL_ID", roomId)
+            putExtra("ZEGO_TOKEN", token)
             putExtra("TARGET_USER_NAME", safeTargetName)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(intent)
     }
 
     actual fun endCall() {
         try {
-            ZegoUIKitPrebuiltCallInvitationService.endCall()
             ZegoUIKitPrebuiltCallService.endCall()
         } catch (e: Exception) {}
     }
