@@ -24,4 +24,7 @@ class UserRepository(private val repository: CustomerRepository) {
     
     suspend fun initiateRecharge(amountPaise: Long, coinsMicros: Long) = 
         repository.createCashfreeOrder(amountPaise, coinsMicros)
+
+    suspend fun notifyWhenOnline(listenerId: String) = 
+        repository.notifyWhenOnline(listenerId)
 }

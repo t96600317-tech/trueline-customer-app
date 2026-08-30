@@ -387,15 +387,26 @@ fun MainScreen(
                         }
 
                         val isOnline = partner.availability.equals("online", ignoreCase = true)
+                        val isBusy = partner.availability.equals("busy", ignoreCase = true)
+                        val statusColor = when {
+                            isOnline -> OnlineSuccess
+                            isBusy -> Color(0xFFEA580C)
+                            else -> Color(0xFF94A3B8)
+                        }
+                        val statusText = when {
+                            isOnline -> "ONLINE"
+                            isBusy -> "BUSY"
+                            else -> "OFFLINE"
+                        }
                         Surface(
-                            color = if (isOnline) OnlineSuccess else Color(0xFF94A3B8),
+                            color = statusColor,
                             shape = RoundedCornerShape(6.dp),
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .offset(x = 2.dp, y = (-2).dp)
                         ) {
                             Text(
-                                text = if (isOnline) "ONLINE" else "OFFLINE",
+                                text = statusText,
                                 color = Color.White,
                                 fontSize = 8.5.sp,
                                 fontWeight = FontWeight.Bold,
@@ -545,16 +556,24 @@ fun MainScreen(
                             }
                         }
 
-                        // Call Button
+                        // Call or Notify Me Button
+                        val isPartnerBusy = partner.availability.equals("busy", ignoreCase = true)
                         Button(
                             onClick = {
                                 val p = partner
-                                selectedProfilePartner = null
-                                if (walletBalance >= p.rate_per_min) {
-                                    onConnectToListener(p.id)
+                                if (isPartnerBusy) {
+                                    scope.launch {
+                                        userRepository.notifyWhenOnline(p.id)
+                                    }
+                                    selectedProfilePartner = null
                                 } else {
-                                    pendingListenerName = p.name
-                                    showAddCoinsSheet = true
+                                    selectedProfilePartner = null
+                                    if (walletBalance >= p.rate_per_min) {
+                                        onConnectToListener(p.id)
+                                    } else {
+                                        pendingListenerName = p.name
+                                        showAddCoinsSheet = true
+                                    }
                                 }
                             },
                             modifier = Modifier
@@ -563,7 +582,7 @@ fun MainScreen(
                             shape = RoundedCornerShape(14.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Accent
+                                containerColor = if (isPartnerBusy) Color(0xFFEA580C) else Accent
                             )
                         ) {
                             Row(
@@ -571,14 +590,14 @@ fun MainScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Call,
-                                    contentDescription = strings.callTab,
+                                    imageVector = if (isPartnerBusy) Icons.Filled.Notifications else Icons.Default.Call,
+                                    contentDescription = if (isPartnerBusy) "Notify Me" else strings.callTab,
                                     tint = Color.White,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = strings.callTab,
+                                    text = if (isPartnerBusy) "Notify Me" else strings.callTab,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -913,17 +932,28 @@ fun ExactReplicaCard(
                     )
                 }
 
-                // Availability Badge (ONLINE / OFFLINE)
+                // Availability Badge (ONLINE / BUSY / OFFLINE)
                 val isOnline = partner.availability.equals("online", ignoreCase = true)
+                val isBusy = partner.availability.equals("busy", ignoreCase = true)
+                val badgeColor = when {
+                    isOnline -> OnlineSuccess
+                    isBusy -> Color(0xFFEA580C)
+                    else -> Color(0xFF94A3B8)
+                }
+                val badgeText = when {
+                    isOnline -> strings.onlineStatus
+                    isBusy -> "BUSY"
+                    else -> strings.offlineStatus
+                }
                 Surface(
-                    color = if (isOnline) OnlineSuccess else Color(0xFF94A3B8),
+                    color = badgeColor,
                     shape = RoundedCornerShape(6.dp),
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .offset(x = 2.dp, y = (-2).dp)
                 ) {
                     Text(
-                        text = if (isOnline) strings.onlineStatus else strings.offlineStatus,
+                        text = badgeText,
                         color = Color.White,
                         fontSize = 8.sp,
                         fontWeight = FontWeight.Bold,
