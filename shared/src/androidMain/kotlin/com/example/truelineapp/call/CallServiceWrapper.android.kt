@@ -67,11 +67,16 @@ actual class CallServiceWrapper(private val context: Context) {
         ZegoCallActivity.onCallEndCallback = onCallEnd
 
         val safeTargetName = targetUserName.trim().ifBlank { "Listener" }.take(64)
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        val savedName = storage.getUserName() ?: ""
+        if (savedName.isNotBlank() && currentUserName.isBlank()) {
+            currentUserName = savedName
+        }
 
         // Ensure invitation service is active
         if (!isInvitationServiceInit) {
             val uid = currentUserId.ifBlank { "user_" + System.currentTimeMillis() }
-            val uname = currentUserName.ifBlank { "User" }
+            val uname = currentUserName.ifBlank { savedName.ifBlank { "User" } }
             initialize(currentAppId, currentAppSign, uid, uname)
         }
 
@@ -79,11 +84,15 @@ actual class CallServiceWrapper(private val context: Context) {
     }
 
     private fun launchDirectCall(roomId: String, safeTargetName: String) {
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        val savedName = storage.getUserName() ?: ""
+        val effectiveUserName = currentUserName.ifBlank { savedName.ifBlank { "User" } }
+
         val intent = Intent(context, ZegoCallActivity::class.java).apply {
             putExtra("APP_ID", currentAppId)
             putExtra("APP_SIGN", currentAppSign)
             putExtra("USER_ID", currentUserId.ifBlank { "user_" + System.currentTimeMillis() })
-            putExtra("USER_NAME", currentUserName.ifBlank { "User" })
+            putExtra("USER_NAME", effectiveUserName)
             putExtra("CALL_ID", roomId)
             putExtra("TARGET_USER_NAME", safeTargetName)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
