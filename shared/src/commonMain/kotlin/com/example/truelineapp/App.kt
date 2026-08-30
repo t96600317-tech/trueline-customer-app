@@ -429,7 +429,7 @@ fun MainScreen(
                         val isBusy = partner.availability.equals("busy", ignoreCase = true)
                         val statusColor = when {
                             isOnline -> OnlineSuccess
-                            isBusy -> Color(0xFFEA580C)
+                            isBusy -> Color(0xFFF59E0B)
                             else -> Color(0xFF94A3B8)
                         }
                         val statusText = when {
@@ -600,14 +600,12 @@ fun MainScreen(
                         val isOffline = !isOnline && !isBusy
 
                         val modalBtnColor = when {
-                            isOnline -> Accent
-                            isBusy -> Color(0xFFEA580C)
-                            else -> Color(0xFFCBD5E1)
+                            isOffline -> Color(0xFFCBD5E1)
+                            else -> Accent
                         }
                         val modalBtnTextColor = when {
-                            isOnline -> Color.White
-                            isBusy -> Color.White
-                            else -> Color(0xFF64748B)
+                            isOffline -> Color(0xFF64748B)
+                            else -> Dark
                         }
                         val modalBtnText = when {
                             isOnline -> strings.callTab
@@ -992,7 +990,7 @@ fun ExactReplicaCard(
                 val isBusy = partner.availability.equals("busy", ignoreCase = true)
                 val badgeColor = when {
                     isOnline -> OnlineSuccess
-                    isBusy -> Color(0xFFEA580C)
+                    isBusy -> Color(0xFFF59E0B)
                     else -> Color(0xFF94A3B8)
                 }
                 val badgeText = when {
@@ -1111,19 +1109,16 @@ fun ExactReplicaCard(
                 val isOffline = !isOnline && !isBusy
 
                 val buttonBgColor = when {
-                    isOnline -> Accent
-                    isBusy -> Color(0xFFEA580C)
-                    else -> Color(0xFFE2E8F0)
+                    isOffline -> Color(0xFFE2E8F0)
+                    else -> Accent
                 }
                 val buttonTextColor = when {
-                    isOnline -> Dark
-                    isBusy -> Color.White
-                    else -> Color(0xFF94A3B8)
+                    isOffline -> Color(0xFF94A3B8)
+                    else -> Dark
                 }
                 val buttonIconTint = when {
-                    isOnline -> Dark
-                    isBusy -> Color.White
-                    else -> Color(0xFF94A3B8)
+                    isOffline -> Color(0xFF94A3B8)
+                    else -> Dark
                 }
                 val buttonText = when {
                     isOnline -> strings.connectCall
