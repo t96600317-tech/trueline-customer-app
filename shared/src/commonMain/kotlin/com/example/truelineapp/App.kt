@@ -41,6 +41,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.savedstate.read
 import org.jetbrains.compose.resources.painterResource
 import truelineapp.shared.generated.resources.Res
 import truelineapp.shared.generated.resources.profile_girl
@@ -122,7 +123,7 @@ fun App() {
                     route = "main/{tab}",
                     arguments = listOf(navArgument("tab") { type = NavType.IntType; defaultValue = 0 })
                 ) { backStackEntry ->
-                    val initialTab = (backStackEntry.arguments?.get("tab") as? Int) ?: 0
+                    val initialTab = backStackEntry.arguments?.read { getIntOrNull("tab") } ?: 0
                     MainScreen(
                         initialTab = initialTab,
                         walletBalance = viewModel.walletBalance.toInt(),
@@ -198,7 +199,7 @@ fun App() {
                     route = "audio_call/{id}",
                     arguments = listOf(navArgument("id") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.get("id") as? String ?: ""
+                    val id = backStackEntry.arguments?.read { getStringOrNull("id") } ?: ""
                     val name = viewModel.partners.find { it.id == id }?.name 
                         ?: viewModel.currentCallingPartner?.name 
                         ?: "Listener"
@@ -231,7 +232,7 @@ fun App() {
                         navArgument("id") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.get("id") as? String ?: ""
+                    val id = backStackEntry.arguments?.read { getStringOrNull("id") } ?: ""
                     val partner = viewModel.partners.find { it.id == id }
                         ?: viewModel.conversations.find { it.partner_id == id }?.let {
                             ListenerDiscovery(
