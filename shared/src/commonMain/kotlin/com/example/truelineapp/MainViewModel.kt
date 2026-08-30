@@ -311,10 +311,7 @@ class MainViewModel(private val scope: CoroutineScope) {
         val storage = com.example.truelineapp.storage.getSessionStorage()
         storage.saveUserPhoto("")
         if (!oldPath.isNullOrBlank()) {
-            try {
-                val file = java.io.File(oldPath)
-                if (file.exists()) file.delete()
-            } catch (e: Exception) {}
+            deleteLocalFile(oldPath)
         }
     }
 
@@ -448,7 +445,7 @@ class MainViewModel(private val scope: CoroutineScope) {
         val trimmed = content.trim()
         if (trimmed.isBlank()) return
         
-        val tempId = "temp_${System.currentTimeMillis()}"
+        val tempId = "temp_${currentPlatformTimeMillis()}"
         val tempMsg = ChatMessageData(
             id = tempId,
             user_id = userId,
