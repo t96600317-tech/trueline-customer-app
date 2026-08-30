@@ -704,7 +704,7 @@ fun MainScreen(
                     title = {
                         TrueLineBrandHeader(
                             logoSize = 34.dp,
-                            titleSize = 20.sp
+                            titleSize = 22.sp
                         )
                     },
                     actions = {

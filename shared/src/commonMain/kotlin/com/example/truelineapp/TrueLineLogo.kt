@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -36,7 +37,7 @@ fun TrueLineLogo(size: Dp = 40.dp, modifier: Modifier = Modifier) {
 fun TrueLineBrandHeader(
     modifier: Modifier = Modifier,
     logoSize: Dp = 38.dp,
-    titleSize: androidx.compose.ui.unit.TextUnit = 28.sp,
+    titleSize: androidx.compose.ui.unit.TextUnit = 26.sp,
     showSubtitle: Boolean = true
 ) {
     Row(
@@ -45,21 +46,23 @@ fun TrueLineBrandHeader(
         horizontalArrangement = Arrangement.Center
     ) {
         TrueLineLogo(size = logoSize)
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "True",
                 fontSize = titleSize,
-                fontWeight = FontWeight.Black,
-                color = Color(0xFF0F172A),
-                letterSpacing = (-0.5).sp
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1B2A2E),
+                letterSpacing = (-0.2).sp
             )
             Text(
                 text = "Line",
                 fontSize = titleSize,
-                fontWeight = FontWeight.Bold,
-                color = TrueLinePrimary,
-                letterSpacing = (-0.5).sp
+                fontFamily = FontFamily.Serif,
+                fontWeight = FontWeight.Normal,
+                color = Color(0xFF245255),
+                letterSpacing = (-0.2).sp
             )
         }
     }
@@ -70,17 +73,19 @@ fun TrueLineBrandText(fontSize: androidx.compose.ui.unit.TextUnit = 24.sp, textC
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = "True",
-            fontWeight = FontWeight.ExtraBold,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
             color = textColor,
             fontSize = fontSize,
-            letterSpacing = (-0.5).sp
+            letterSpacing = (-0.2).sp
         )
         Text(
             text = "Line",
+            fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Normal,
-            color = Secondary,
+            color = Color(0xFF245255),
             fontSize = fontSize,
-            letterSpacing = (-0.5).sp
+            letterSpacing = (-0.2).sp
         )
     }
 }
