@@ -364,17 +364,38 @@ class MainViewModel(private val scope: CoroutineScope) {
     }
 
     // --- Discovery Methods ---
-    fun fetchListeners() {
-        isDiscoverLoading = true
+    private var listenersPollingJob: Job? = null
+
+    fun startLiveListenersPolling() {
+        listenersPollingJob?.cancel()
+        listenersPollingJob = scope.launch {
+            while (true) {
+                fetchListeners(silent = partners.isNotEmpty())
+                delay(3000) // Poll every 3 seconds for live online/busy/offline status updates
+            }
+        }
+    }
+
+    fun stopLiveListenersPolling() {
+        listenersPollingJob?.cancel()
+        listenersPollingJob = null
+    }
+
+    fun fetchListeners(silent: Boolean = false) {
+        if (!silent) {
+            isDiscoverLoading = true
+        }
         scope.launch {
             val res = repository.getListeners(
                 language = if (selectedDiscoverLanguage == "All") null else selectedDiscoverLanguage,
                 search = if (searchQuery.isBlank()) null else searchQuery
             )
-            isDiscoverLoading = false
+            if (!silent) {
+                isDiscoverLoading = false
+            }
             if (res.success && res.data != null) {
                 val availabilityPriority = { avail: String ->
-                    when (avail.lowercase()) {
+                    when (avail.lowercase().trim()) {
                         "online" -> 3
                         "busy" -> 2
                         else -> 1

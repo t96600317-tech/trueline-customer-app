@@ -158,6 +158,8 @@ fun App() {
                         onRefreshChatList = { viewModel.fetchConversations() },
                         onPlayAudio = { viewModel.toggleAudioPlayback(it) },
                         onNotifyWhenOnline = { listenerId -> viewModel.notifyWhenOnline(listenerId) },
+                        onStartLivePolling = { viewModel.startLiveListenersPolling() },
+                        onStopLivePolling = { viewModel.stopLiveListenersPolling() },
                         onConnectToListener = { listenerId ->
                             viewModel.connectToListener(listenerId) { roomId, token, targetId, targetName, signedUserId, zegoConfigFingerprint ->
                                 com.example.truelineapp.call.getCallService().startAudioCall(
@@ -328,6 +330,8 @@ fun MainScreen(
     onRefreshChatList: () -> Unit,
     onPlayAudio: (url: String) -> Unit,
     onNotifyWhenOnline: (String) -> Unit,
+    onStartLivePolling: () -> Unit = {},
+    onStopLivePolling: () -> Unit = {},
     onConnectToListener: (String) -> Unit,
     onLogout: () -> Unit = {}
 ) {
@@ -341,6 +345,20 @@ fun MainScreen(
     var selectedProfilePartner by remember { mutableStateOf<ListenerDiscovery?>(null) }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(initialTab) }
+
+    DisposableEffect(Unit) {
+        onStartLivePolling()
+        onDispose {
+            onStopLivePolling()
+        }
+    }
+
+    LaunchedEffect(partners) {
+        val currentId = selectedProfilePartner?.id
+        if (currentId != null) {
+            selectedProfilePartner = partners.find { it.id == currentId } ?: selectedProfilePartner
+        }
+    }
 
     LaunchedEffect(initialTab) {
         selectedTab = initialTab
@@ -577,25 +595,49 @@ fun MainScreen(
                             }
                         }
 
-                        // Call Button (Works for both online and busy listeners)
+                        val isOnline = partner.availability.equals("online", ignoreCase = true)
+                        val isBusy = partner.availability.equals("busy", ignoreCase = true)
+                        val isOffline = !isOnline && !isBusy
+
+                        val modalBtnColor = when {
+                            isOnline -> Accent
+                            isBusy -> Color(0xFFEA580C)
+                            else -> Color(0xFFCBD5E1)
+                        }
+                        val modalBtnTextColor = when {
+                            isOnline -> Color.White
+                            isBusy -> Color.White
+                            else -> Color(0xFF64748B)
+                        }
+                        val modalBtnText = when {
+                            isOnline -> strings.callTab
+                            isBusy -> strings.callTab
+                            else -> strings.offlineStatus
+                        }
+
+                        // Call Button (Disabled for offline listeners)
                         Button(
                             onClick = {
-                                val p = partner
-                                selectedProfilePartner = null
-                                if (walletBalance >= p.rate_per_min) {
-                                    onConnectToListener(p.id)
-                                } else {
-                                    pendingListenerName = p.name
-                                    showAddCoinsSheet = true
+                                if (!isOffline) {
+                                    val p = partner
+                                    selectedProfilePartner = null
+                                    if (walletBalance >= p.rate_per_min) {
+                                        onConnectToListener(p.id)
+                                    } else {
+                                        pendingListenerName = p.name
+                                        showAddCoinsSheet = true
+                                    }
                                 }
                             },
+                            enabled = !isOffline,
                             modifier = Modifier
                                 .weight(1f)
                                 .height(48.dp),
                             shape = RoundedCornerShape(14.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = Accent
+                                containerColor = modalBtnColor,
+                                disabledContainerColor = Color(0xFFCBD5E1)
                             )
                         ) {
                             Row(
@@ -604,16 +646,16 @@ fun MainScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Call,
-                                    contentDescription = strings.callTab,
-                                    tint = Color.White,
+                                    contentDescription = modalBtnText,
+                                    tint = modalBtnTextColor,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = strings.callTab,
+                                    text = modalBtnText,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color.White,
+                                    color = modalBtnTextColor,
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -1064,12 +1106,42 @@ fun ExactReplicaCard(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Connect Button (Amber CTA)
+                val isOnline = partner.availability.equals("online", ignoreCase = true)
+                val isBusy = partner.availability.equals("busy", ignoreCase = true)
+                val isOffline = !isOnline && !isBusy
+
+                val buttonBgColor = when {
+                    isOnline -> Accent
+                    isBusy -> Color(0xFFEA580C)
+                    else -> Color(0xFFE2E8F0)
+                }
+                val buttonTextColor = when {
+                    isOnline -> Dark
+                    isBusy -> Color.White
+                    else -> Color(0xFF94A3B8)
+                }
+                val buttonIconTint = when {
+                    isOnline -> Dark
+                    isBusy -> Color.White
+                    else -> Color(0xFF94A3B8)
+                }
+                val buttonText = when {
+                    isOnline -> strings.connectCall
+                    isBusy -> strings.connectCall
+                    else -> strings.offlineStatus
+                }
+
+                // Connect Button (Accent for online, Orange for busy, Gray disabled for offline)
                 Surface(
-                    onClick = onConnectClick,
+                    onClick = {
+                        if (!isOffline) {
+                            onConnectClick()
+                        }
+                    },
+                    enabled = !isOffline,
                     modifier = Modifier.fillMaxWidth().height(44.dp),
                     shape = RoundedCornerShape(14.dp),
-                    color = Accent
+                    color = buttonBgColor
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 12.dp).fillMaxSize(),
@@ -1080,13 +1152,13 @@ fun ExactReplicaCard(
                             Icon(
                                 imageVector = Icons.Default.Call,
                                 contentDescription = null,
-                                tint = Dark,
+                                tint = buttonIconTint,
                                 modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = strings.connectCall,
-                                color = Dark,
+                                text = buttonText,
+                                color = buttonTextColor,
                                 fontSize = 14.5.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -1094,7 +1166,7 @@ fun ExactReplicaCard(
 
                         // Rate Pill with Coin Logo
                         Surface(
-                            color = Color.Black.copy(alpha = 0.16f),
+                            color = if (isOffline) Color.Black.copy(alpha = 0.05f) else Color.Black.copy(alpha = 0.16f),
                             shape = RoundedCornerShape(10.dp)
                         ) {
                             Row(
@@ -1105,7 +1177,7 @@ fun ExactReplicaCard(
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "${partner.rate_per_min.toInt()}/min",
-                                    color = Color.White,
+                                    color = if (isOffline) Color(0xFF94A3B8) else Color.White,
                                     fontSize = 11.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
