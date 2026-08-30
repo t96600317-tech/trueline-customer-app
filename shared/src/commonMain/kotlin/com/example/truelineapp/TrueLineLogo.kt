@@ -37,16 +37,16 @@ fun TrueLineLogo(size: Dp = 40.dp, modifier: Modifier = Modifier) {
 fun TrueLineBrandHeader(
     modifier: Modifier = Modifier,
     logoSize: Dp = 38.dp,
-    titleSize: androidx.compose.ui.unit.TextUnit = 26.sp,
+    titleSize: androidx.compose.ui.unit.TextUnit = 28.sp,
     showSubtitle: Boolean = true
 ) {
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = Arrangement.Start
     ) {
         TrueLineLogo(size = logoSize)
-        Spacer(modifier = Modifier.width(8.dp))
+        Spacer(modifier = Modifier.width(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 text = "True",
@@ -54,7 +54,7 @@ fun TrueLineBrandHeader(
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1B2A2E),
-                letterSpacing = (-0.2).sp
+                letterSpacing = (-0.3).sp
             )
             Text(
                 text = "Line",
@@ -62,7 +62,7 @@ fun TrueLineBrandHeader(
                 fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Normal,
                 color = Color(0xFF245255),
-                letterSpacing = (-0.2).sp
+                letterSpacing = (-0.3).sp
             )
         }
     }
