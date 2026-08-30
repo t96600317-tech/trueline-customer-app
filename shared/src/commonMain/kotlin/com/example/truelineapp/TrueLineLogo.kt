@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.painterResource
 import truelineapp.shared.generated.resources.Res
 import truelineapp.shared.generated.resources.app_logo
+import truelineapp.shared.generated.resources.trueline_wordmark
 
 @Composable
 fun TrueLineLogo(size: Dp = 40.dp, modifier: Modifier = Modifier) {
@@ -47,24 +48,12 @@ fun TrueLineBrandHeader(
     ) {
         TrueLineLogo(size = logoSize)
         Spacer(modifier = Modifier.width(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = "True",
-                fontSize = titleSize,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1B2A2E),
-                letterSpacing = (-0.3).sp
-            )
-            Text(
-                text = "Line",
-                fontSize = titleSize,
-                fontFamily = FontFamily.Serif,
-                fontWeight = FontWeight.Normal,
-                color = Color(0xFF245255),
-                letterSpacing = (-0.3).sp
-            )
-        }
+        Image(
+            painter = painterResource(Res.drawable.trueline_wordmark),
+            contentDescription = "TrueLine",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.height((logoSize * 0.68f).coerceAtLeast(22.dp))
+        )
     }
 }
 
