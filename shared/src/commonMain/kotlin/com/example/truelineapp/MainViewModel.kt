@@ -55,6 +55,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     // --- Discovery State ---
     var partners by mutableStateOf<List<ListenerDiscovery>>(emptyList())
     var isDiscoverLoading by mutableStateOf(false)
+    var isRefreshingListeners by mutableStateOf(false)
     var selectedDiscoverLanguage by mutableStateOf("All")
     var searchQuery by mutableStateOf("")
     var playingAudioUrl by mutableStateOf<String?>(null)
@@ -380,6 +381,31 @@ class MainViewModel(private val scope: CoroutineScope) {
     fun stopLiveListenersPolling() {
         listenersPollingJob?.cancel()
         listenersPollingJob = null
+    }
+
+    fun refreshListeners(onComplete: () -> Unit = {}) {
+        isRefreshingListeners = true
+        scope.launch {
+            val res = repository.getListeners(
+                language = if (selectedDiscoverLanguage == "All") null else selectedDiscoverLanguage,
+                search = if (searchQuery.isBlank()) null else searchQuery
+            )
+            isRefreshingListeners = false
+            if (res.success && res.data != null) {
+                val availabilityPriority = { avail: String ->
+                    when (avail.lowercase().trim()) {
+                        "online" -> 3
+                        "busy" -> 2
+                        else -> 1
+                    }
+                }
+                partners = res.data.sortedWith(
+                    compareByDescending<ListenerDiscovery> { availabilityPriority(it.availability) }
+                        .thenByDescending { it.rating_avg }
+                )
+            }
+            onComplete()
+        }
     }
 
     fun fetchListeners(silent: Boolean = false) {

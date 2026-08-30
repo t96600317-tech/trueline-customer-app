@@ -21,6 +21,9 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -135,9 +138,11 @@ fun App() {
                         isDiscoverLoading = viewModel.isDiscoverLoading,
                         searchQueryInitial = viewModel.searchQuery,
                         selectedDiscoverLanguage = viewModel.selectedDiscoverLanguage,
+                        isRefreshingListeners = viewModel.isRefreshingListeners,
                         conversations = viewModel.conversations,
                         isChatListLoading = viewModel.isChatListLoading,
                         playingAudioUrl = viewModel.playingAudioUrl,
+                        onRefreshListeners = { viewModel.refreshListeners() },
                         onChatClick = { partner ->
                             navController.navigate("chat_detail/${partner.partner_id}")
                         },
@@ -332,6 +337,8 @@ fun MainScreen(
     onNotifyWhenOnline: (String) -> Unit,
     onStartLivePolling: () -> Unit = {},
     onStopLivePolling: () -> Unit = {},
+    isRefreshingListeners: Boolean = false,
+    onRefreshListeners: () -> Unit = {},
     onConnectToListener: (String) -> Unit,
     onLogout: () -> Unit = {}
 ) {
@@ -874,34 +881,40 @@ fun MainScreen(
                         }
                     }
 
-                    // Listeners List
-                    if (isDiscoverLoading) {
+                    // Listeners List with Pull-to-Refresh
+                    if (isDiscoverLoading && partners.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             com.example.truelineapp.ui.TrueLineWaveformLoader(size = 44.dp)
                         }
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 16.dp, top = 4.dp)
+                        PullToRefreshBox(
+                            isRefreshing = isRefreshingListeners,
+                            onRefresh = onRefreshListeners,
+                            modifier = Modifier.fillMaxSize()
                         ) {
-                            items(partners) { partner ->
-                                ExactReplicaCard(
-                                    partner = partner, 
-                                    isPlaying = playingAudioUrl == partner.audio_sample_url,
-                                    selectedLanguageCode = selectedLanguageCode,
-                                    onCardClick = { 
-                                        selectedProfilePartner = partner
-                                    },
-                                    onPlayClick = { onPlayAudio(partner.audio_sample_url) },
-                                    onConnectClick = {
-                                        if (walletBalance >= partner.rate_per_min) {
-                                            onConnectToListener(partner.id)
-                                        } else {
-                                            pendingListenerName = partner.name
-                                            showAddCoinsSheet = true
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 16.dp, top = 4.dp)
+                            ) {
+                                items(partners) { partner ->
+                                    ExactReplicaCard(
+                                        partner = partner, 
+                                        isPlaying = playingAudioUrl == partner.audio_sample_url,
+                                        selectedLanguageCode = selectedLanguageCode,
+                                        onCardClick = { 
+                                            selectedProfilePartner = partner
+                                        },
+                                        onPlayClick = { onPlayAudio(partner.audio_sample_url) },
+                                        onConnectClick = {
+                                            if (walletBalance >= partner.rate_per_min) {
+                                                onConnectToListener(partner.id)
+                                            } else {
+                                                pendingListenerName = partner.name
+                                                showAddCoinsSheet = true
+                                            }
                                         }
-                                    }
-                                )
+                                    )
+                                }
                             }
                         }
                     }
