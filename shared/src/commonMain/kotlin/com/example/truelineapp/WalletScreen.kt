@@ -88,16 +88,6 @@ fun WalletScreen(
                         .padding(horizontal = 20.dp, vertical = 16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("🔒 100% Secure Checkout with Cashfree", fontSize = 12.sp, color = TrueLineTextSecondary)
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
                     val selectedPrice = when (selectedPackageAmount) {
                         130 -> "₹49"
                         260 -> "₹99"
