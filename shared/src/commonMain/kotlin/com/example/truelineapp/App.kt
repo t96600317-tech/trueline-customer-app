@@ -122,7 +122,7 @@ fun App() {
                     route = "main/{tab}",
                     arguments = listOf(navArgument("tab") { type = NavType.IntType; defaultValue = 0 })
                 ) { backStackEntry ->
-                    val initialTab = backStackEntry.arguments?.getInt("tab") ?: 0
+                    val initialTab = (backStackEntry.arguments?.get("tab") as? Int) ?: 0
                     MainScreen(
                         initialTab = initialTab,
                         walletBalance = viewModel.walletBalance.toInt(),
@@ -198,7 +198,7 @@ fun App() {
                     route = "audio_call/{id}",
                     arguments = listOf(navArgument("id") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("id") ?: ""
+                    val id = backStackEntry.arguments?.get("id") as? String ?: ""
                     val name = viewModel.partners.find { it.id == id }?.name 
                         ?: viewModel.currentCallingPartner?.name 
                         ?: "Listener"
@@ -231,7 +231,7 @@ fun App() {
                         navArgument("id") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("id") ?: ""
+                    val id = backStackEntry.arguments?.get("id") as? String ?: ""
                     val partner = viewModel.partners.find { it.id == id }
                         ?: viewModel.conversations.find { it.partner_id == id }?.let {
                             ListenerDiscovery(
