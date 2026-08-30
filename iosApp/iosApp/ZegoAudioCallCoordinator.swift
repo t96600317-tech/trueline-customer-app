@@ -21,7 +21,7 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
     private override init() {
         super.init()
         NotificationCenter.default.addObserver(self, selector: #selector(startCall(_:)), name: .truelineZegoStart, object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(endCall), name: .truelineZegoEnd, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(endCallFromNotification), name: .truelineZegoEnd, object: nil)
     }
 
     @objc private func startCall(_ notification: Notification) {
@@ -52,7 +52,7 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
     }
 
     private func joinRoom(appID: UInt32, token: String, roomID: String, userID: String, userName: String, targetName: String) {
-        endCall(reportEnd: false)
+        tearDownCall(reportEnd: false)
         self.roomID = roomID
         self.streamID = "trueline_\(userID)_\(roomID)"
         self.connectedAt = nil
@@ -67,7 +67,7 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
         }
 
         let screen = ZegoAudioCallViewController(targetName: targetName) { [weak self] in
-            self?.endCall()
+            self?.endCallFromNotification()
         }
         callViewController = screen
         presentingViewController()?.present(screen, animated: true)
@@ -110,11 +110,11 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
         }
     }
 
-    @objc private func endCall() {
-        endCall(reportEnd: true)
+    @objc private func endCallFromNotification() {
+        tearDownCall(reportEnd: true)
     }
 
-    private func endCall(reportEnd: Bool) {
+    private func tearDownCall(reportEnd: Bool) {
         guard !roomID.isEmpty || engine != nil else { return }
         engine?.stopPublishingStream()
         if !roomID.isEmpty {
@@ -134,7 +134,7 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
     }
 
     private func reportFailure(_ message: String) {
-        endCall(reportEnd: false)
+        tearDownCall(reportEnd: false)
         NotificationCenter.default.post(name: .truelineZegoFailed, object: nil, userInfo: ["message": message])
     }
 
