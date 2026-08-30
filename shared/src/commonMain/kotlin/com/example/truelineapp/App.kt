@@ -163,9 +163,8 @@ fun App() {
                                     targetUserId = targetId,
                                     targetUserName = targetName,
                                     token = token,
-                                    onCallEnd = {
-                                        viewModel.onCallFinished(180)
-                                    }
+                                    onCallEnd = viewModel::onCallFinished,
+                                    onCallStartFailed = viewModel::onCallConnectionFailed
                                 )
                             }
                         },
@@ -203,10 +202,7 @@ fun App() {
                     AudioCallScreen(
                         listenerName = name,
                         onHangUp = {
-                            viewModel.onCallFinished(180)
-                            navController.navigate("post_call_rating") {
-                                popUpTo("audio_call/{id}") { inclusive = true }
-                            }
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -215,7 +211,7 @@ fun App() {
                     PostCallRatingScreen(
                         listenerName = partnerName,
                         callDurationSeconds = viewModel.lastCallDuration,
-                        coinsDeducted = viewModel.lastCallCoinsDeducted,
+                        coinsDeductedMicros = viewModel.lastCallCoinsDeductedMicros,
                         onSubmit = { rating, tags, isFavorite ->
                             viewModel.submitRating(rating, tags, isFavorite)
                             navController.popBackStack("main/0", inclusive = false)
@@ -262,9 +258,8 @@ fun App() {
                                     targetUserId = targetId,
                                     targetUserName = targetName,
                                     token = token,
-                                    onCallEnd = {
-                                        viewModel.onCallFinished(180)
-                                    }
+                                    onCallEnd = viewModel::onCallFinished,
+                                    onCallStartFailed = viewModel::onCallConnectionFailed
                                 )
                             }
                         },

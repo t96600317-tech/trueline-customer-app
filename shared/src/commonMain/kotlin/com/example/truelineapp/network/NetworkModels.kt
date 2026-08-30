@@ -82,6 +82,15 @@ data class CallInitiateResponse(
 )
 
 @Serializable
+data class CallSummary(
+    val session_id: String,
+    val status: String,
+    val duration_seconds: Int,
+    val coins_deducted_micros: Long,
+    val end_reason: String = ""
+)
+
+@Serializable
 data class CallEvent(
     val type: String,
     val session_id: String? = null,

@@ -74,9 +74,10 @@ class MainViewModel(private val scope: CoroutineScope) {
     var activeSessionId by mutableStateOf<String?>(null)
     var currentCallingPartner by mutableStateOf<ListenerDiscovery?>(null)
     var showPostCallRating by mutableStateOf(false)
-    var lastCallDuration by mutableStateOf(180)
-    var lastCallCoinsDeducted by mutableStateOf(27)
+    var lastCallDuration by mutableStateOf(0)
+    var lastCallCoinsDeductedMicros by mutableStateOf(0L)
     private var callEventsJob: Job? = null
+    private var isEndingCall = false
 
     init {
         val storage = com.example.truelineapp.storage.getSessionStorage()
@@ -580,17 +581,42 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
-    fun onCallFinished(durationSeconds: Int = 180) {
-        lastCallDuration = durationSeconds
-        val rate = currentCallingPartner?.rate_per_min ?: 9.0
-        lastCallCoinsDeducted = (((durationSeconds + 59) / 60) * rate).toInt()
-        showPostCallRating = true
+    fun onCallFinished(durationSeconds: Int) {
+        val sid = activeSessionId ?: return
+        if (isEndingCall) return
+        isEndingCall = true
+        callEventsJob?.cancel()
+
+        scope.launch {
+            repository.endCall(sid, "user_hangup")
+            val summary = repository.getCallSummary(sid)
+            isEndingCall = false
+            if (summary.success && summary.data != null && summary.data.duration_seconds > 0) {
+                lastCallDuration = summary.data.duration_seconds
+                lastCallCoinsDeductedMicros = summary.data.coins_deducted_micros
+                showPostCallRating = true
+            } else {
+                errorMessage = "Voice call ended before the listener connected. No coins were charged."
+                activeSessionId = null
+                currentCallingPartner = null
+            }
+            fetchUserProfile()
+        }
+    }
+
+    fun onCallConnectionFailed(message: String) {
+        if (isEndingCall) return
+        callEventsJob?.cancel()
         activeSessionId?.let { sid ->
             scope.launch {
-                repository.endCall(sid, "user_hangup")
+                repository.endCall(sid, "connection_failed")
                 fetchUserProfile()
             }
         }
+        activeSessionId = null
+        currentCallingPartner = null
+        showPostCallRating = false
+        errorMessage = message
     }
 
     fun submitRating(rating: Int, tags: List<String>, isFavorite: Boolean) {

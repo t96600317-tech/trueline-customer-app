@@ -26,8 +26,8 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun PostCallRatingScreen(
     listenerName: String,
-    callDurationSeconds: Int = 180,
-    coinsDeducted: Int = 27,
+    callDurationSeconds: Int,
+    coinsDeductedMicros: Long,
     onSubmit: (rating: Int, tags: List<String>, isFavorite: Boolean) -> Unit,
     onSkip: () -> Unit
 ) {
@@ -38,6 +38,13 @@ fun PostCallRatingScreen(
 
     val minutes = (callDurationSeconds / 60).toString().padStart(2, '0')
     val seconds = (callDurationSeconds % 60).toString().padStart(2, '0')
+    val wholeCoins = coinsDeductedMicros / 1_000_000
+    val fractionalCoins = (coinsDeductedMicros % 1_000_000) / 10_000
+    val coins = if (fractionalCoins == 0L) {
+        wholeCoins.toString()
+    } else {
+        "$wholeCoins.${fractionalCoins.toString().padStart(2, '0')}"
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -87,7 +94,7 @@ fun PostCallRatingScreen(
                 ) {
                     Text("Duration: $minutes:$seconds", fontSize = 14.sp, color = Color.White.copy(alpha = 0.7f))
                     Text("•", color = Color.White.copy(alpha = 0.4f))
-                    Text("Coins: $coinsDeducted", fontSize = 14.sp, color = TrueLineAccent, fontWeight = FontWeight.SemiBold)
+                    Text("Coins: $coins", fontSize = 14.sp, color = TrueLineAccent, fontWeight = FontWeight.SemiBold)
                 }
             }
 

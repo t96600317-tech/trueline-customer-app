@@ -7,7 +7,8 @@ expect class CallServiceWrapper {
         targetUserId: String,
         targetUserName: String,
         token: String = "",
-        onCallEnd: () -> Unit = {}
+        onCallEnd: (durationSeconds: Int) -> Unit = {},
+        onCallStartFailed: (message: String) -> Unit = {}
     )
     fun endCall()
 }

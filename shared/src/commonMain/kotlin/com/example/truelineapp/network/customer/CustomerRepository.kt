@@ -240,6 +240,22 @@ class CustomerRepository(
         return ApiResponse(true, data = mapOf("status" to "ended"))
     }
 
+    suspend fun getCallSummary(sessionId: String): ApiResponse<CallSummary> {
+        val token = getAuthToken() ?: return ApiResponse(
+            false,
+            error = ApiError("UNAUTHORIZED", "Please log in to view a call summary")
+        )
+        return try {
+            executeWithFallback { baseUrl ->
+                client.get("$baseUrl/calls/$sessionId/summary") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }.body()
+            }
+        } catch (e: Exception) {
+            ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to load call summary"))
+        }
+    }
+
     suspend fun rateCall(sessionId: String, rating: Int, tags: List<String>, isFavorite: Boolean): ApiResponse<Map<String, String>> {
         val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
         return try {

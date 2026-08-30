@@ -19,6 +19,8 @@ class UserRepository(private val repository: CustomerRepository) {
     suspend fun initiateCall(listenerId: String) = repository.initiateCall(listenerId)
     
     suspend fun endCall(sessionId: String, reason: String) = repository.endCall(sessionId, reason)
+
+    suspend fun getCallSummary(sessionId: String) = repository.getCallSummary(sessionId)
     
     fun observeCallEvents(sessionId: String) = repository.observeCallEvents(sessionId)
     

@@ -32,10 +32,12 @@ actual class CallServiceWrapper(private val context: Context) {
         targetUserId: String,
         targetUserName: String,
         token: String,
-        onCallEnd: () -> Unit
+        onCallEnd: (durationSeconds: Int) -> Unit,
+        onCallStartFailed: (message: String) -> Unit
     ) {
         require(token.isNotBlank()) { "A Zego token is required to start a voice call" }
         ZegoCallActivity.onCallEndCallback = onCallEnd
+        ZegoCallActivity.onCallStartFailedCallback = onCallStartFailed
 
         val safeTargetName = targetUserName.trim().ifBlank { "Listener" }.take(64)
         val storage = com.example.truelineapp.storage.getSessionStorage()
