@@ -374,8 +374,15 @@ class MainViewModel(private val scope: CoroutineScope) {
             )
             isDiscoverLoading = false
             if (res.success && res.data != null) {
+                val availabilityPriority = { avail: String ->
+                    when (avail.lowercase()) {
+                        "online" -> 3
+                        "busy" -> 2
+                        else -> 1
+                    }
+                }
                 partners = res.data.sortedWith(
-                    compareByDescending<ListenerDiscovery> { it.availability.equals("online", ignoreCase = true) }
+                    compareByDescending<ListenerDiscovery> { availabilityPriority(it.availability) }
                         .thenByDescending { it.rating_avg }
                 )
             }

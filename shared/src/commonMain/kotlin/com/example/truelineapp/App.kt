@@ -559,22 +559,16 @@ fun MainScreen(
                             }
                         }
 
-                        // Call or Notify Me Button
-                        val isPartnerBusy = partner.availability.equals("busy", ignoreCase = true)
+                        // Call Button (Works for both online and busy listeners)
                         Button(
                             onClick = {
                                 val p = partner
-                                if (isPartnerBusy) {
-                                    onNotifyWhenOnline(p.id)
-                                    selectedProfilePartner = null
+                                selectedProfilePartner = null
+                                if (walletBalance >= p.rate_per_min) {
+                                    onConnectToListener(p.id)
                                 } else {
-                                    selectedProfilePartner = null
-                                    if (walletBalance >= p.rate_per_min) {
-                                        onConnectToListener(p.id)
-                                    } else {
-                                        pendingListenerName = p.name
-                                        showAddCoinsSheet = true
-                                    }
+                                    pendingListenerName = p.name
+                                    showAddCoinsSheet = true
                                 }
                             },
                             modifier = Modifier
@@ -583,7 +577,7 @@ fun MainScreen(
                             shape = RoundedCornerShape(14.dp),
                             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isPartnerBusy) Color(0xFFEA580C) else Accent
+                                containerColor = Accent
                             )
                         ) {
                             Row(
@@ -591,14 +585,14 @@ fun MainScreen(
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = if (isPartnerBusy) Icons.Filled.Notifications else Icons.Default.Call,
-                                    contentDescription = if (isPartnerBusy) "Notify Me" else strings.callTab,
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = strings.callTab,
                                     tint = Color.White,
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (isPartnerBusy) "Notify Me" else strings.callTab,
+                                    text = strings.callTab,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
