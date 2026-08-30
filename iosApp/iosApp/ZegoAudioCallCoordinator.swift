@@ -102,10 +102,19 @@ final class ZegoAudioCallCoordinator: NSObject, ZegoEventHandler {
     func onRoomStreamUpdate(_ updateType: ZegoUpdateType, streamList: [ZegoStream], extendedData: [AnyHashable: Any]?, roomID: String) {
         guard roomID == self.roomID else { return }
         for stream in streamList {
+            // The local microphone stream is already rendered by the system
+            // audio route. Playing it again would create an echo/feedback loop.
+            guard stream.streamID != self.streamID else { continue }
             if updateType == .add {
                 engine?.startPlayingStream(stream.streamID, canvas: nil)
             } else {
                 engine?.stopPlayingStream(stream.streamID)
+                // A one-to-one call has no remaining remote media when the
+                // peer unpublishes their stream, so close the local session.
+                DispatchQueue.main.async { [weak self] in
+                    self?.endCallFromNotification()
+                }
+                return
             }
         }
     }
