@@ -47,12 +47,12 @@ fun TrueLineBrandHeader(
         horizontalArrangement = Arrangement.Start
     ) {
         TrueLineLogo(size = logoSize)
-        Spacer(modifier = Modifier.width(10.dp))
+        Spacer(modifier = Modifier.width(8.dp))
         Image(
             painter = painterResource(Res.drawable.trueline_wordmark),
             contentDescription = "TrueLine",
             contentScale = ContentScale.Fit,
-            modifier = Modifier.height((logoSize * 0.68f).coerceAtLeast(22.dp))
+            modifier = Modifier.height((logoSize * 0.56f).coerceAtLeast(18.dp))
         )
     }
 }
