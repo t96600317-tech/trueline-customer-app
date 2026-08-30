@@ -1,12 +1,19 @@
 package com.example.truelineapp
 
+import com.example.truelineapp.otp.getMsg91OtpGateway
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class SharedLogicIOSTest {
 
     @Test
-    fun example() {
-        assertEquals(3, 1 + 2)
+    fun iosUsesTheBackendOtpFallbackUntilTheNativeMsg91BridgeExists() {
+        assertFalse(getMsg91OtpGateway().isConfigured)
+    }
+
+    @Test
+    fun iosPlatformIdentificationIsAvailableToSharedCode() {
+        assertTrue(getPlatform().name.contains("iOS"))
     }
 }
