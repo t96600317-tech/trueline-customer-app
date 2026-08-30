@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat
 import com.zegocloud.uikit.ZegoUIKit
 import com.zegocloud.uikit.prebuilt.call.ZegoUIKitPrebuiltCallConfig
 import com.zegocloud.uikit.prebuilt.call.ZegoUIKitPrebuiltCallFragment
+import com.zegocloud.uikit.prebuilt.call.config.ZegoCallDurationConfig
 import com.zegocloud.uikit.service.defines.RoomStateChangedListener
 import im.zego.zegoexpress.constants.ZegoRoomStateChangedReason
 
@@ -124,7 +125,9 @@ class ZegoCallActivity : AppCompatActivity() {
                 useSpeakerWhenJoining = true
                 topMenuBarConfig.isVisible = true
                 topMenuBarConfig.title = targetUserName
-                durationConfig.isVisible = true
+                durationConfig = ZegoCallDurationConfig().apply {
+                    isVisible = true
+                }
                 leaveCallListener = ZegoUIKitPrebuiltCallFragment.LeaveCallListener {
                     finishCall()
                 }
