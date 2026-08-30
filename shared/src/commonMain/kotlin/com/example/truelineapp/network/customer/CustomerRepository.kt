@@ -202,36 +202,21 @@ class CustomerRepository(
 
     // --- Calling ---
     suspend fun initiateCall(listenerId: String): ApiResponse<CallInitiateResponse> {
-        val token = getAuthToken()
-        val roomId = "call_${listenerId.replace("-", "").take(16)}"
-        val sessionId = "session_${System.currentTimeMillis()}"
-
-        if (token != null) {
-            try {
-                val response: ApiResponse<CallInitiateResponse> = executeWithFallback { baseUrl ->
-                    client.post("$baseUrl/calls/initiate") {
-                        header(HttpHeaders.Authorization, "Bearer $token")
-                        contentType(ContentType.Application.Json)
-                        setBody(CallInitiateRequest(listenerId))
-                    }.body()
-                }
-                if (response.success && response.data != null) {
-                    return response
-                }
-            } catch (e: Exception) {
-                // Fallback to direct client room session
-            }
-        }
-
-        // Direct room fallback ensures 100% call connectivity
-        return ApiResponse(
-            success = true,
-            data = CallInitiateResponse(
-                session_id = sessionId,
-                room_id = roomId,
-                user_token = ""
-            )
+        val token = getAuthToken() ?: return ApiResponse(
+            false,
+            error = ApiError("UNAUTHORIZED", "Please log in to make a call")
         )
+        return try {
+            executeWithFallback { baseUrl ->
+                client.post("$baseUrl/calls/initiate") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(CallInitiateRequest(listenerId))
+                }.body()
+            }
+        } catch (e: Exception) {
+            ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to connect to backend"))
+        }
     }
 
     suspend fun endCall(sessionId: String, reason: String = "user_hangup"): ApiResponse<Map<String, String>> {
