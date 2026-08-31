@@ -442,4 +442,19 @@ class CustomerRepository(
             ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to subscribe for notification"))
         }
     }
+
+    suspend fun registerAndroidFCMDevice(deviceToken: String): ApiResponse<Map<String, String>> {
+        val token = getAuthToken() ?: return ApiResponse(false, error = ApiError("UNAUTHORIZED", "Not logged in"))
+        return try {
+            executeWithFallback { baseUrl ->
+                client.post("$baseUrl/user/devices/android-fcm") {
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("device_token" to deviceToken))
+                }.body()
+            }
+        } catch (e: Exception) {
+            ApiResponse(false, error = ApiError("NETWORK_ERROR", e.message ?: "Failed to register FCM device"))
+        }
+    }
 }

@@ -149,6 +149,13 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
+    fun registerFCMToken(token: String) {
+        if (token.isBlank() || authToken == null) return
+        scope.launch {
+            repository.registerAndroidFCMDevice(token)
+        }
+    }
+
     // --- Auth Methods ---
     fun sendOtp(phone: String, onSuccess: () -> Unit = {}) {
         currentPhoneNumber = phone
