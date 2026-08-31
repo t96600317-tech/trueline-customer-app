@@ -23,8 +23,10 @@ data class CoinPackage(val id: String, val coins: Int, val price: Int, val isPop
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCoinsBottomSheet(
-    listenerName: String,
+    listenerName: String = "",
     currentBalance: Int,
+    title: String? = null,
+    subtitle: String? = null,
     onDismiss: () -> Unit,
     onAddCoins: (CoinPackage) -> Unit
 ) {
@@ -36,6 +38,13 @@ fun AddCoinsBottomSheet(
     
     var selectedPackage by remember { mutableStateOf(packages[1]) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    val resolvedTitle = title ?: if (currentBalance < 1) "Insufficient Balance" else "Add Coins"
+    val resolvedSubtitle = subtitle ?: if (listenerName.isNotBlank()) {
+        if (currentBalance < 1) "Add coins to connect with $listenerName" else "Recharge wallet to talk & chat with $listenerName"
+    } else {
+        "Choose a coin package to recharge your wallet"
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -50,13 +59,13 @@ fun AddCoinsBottomSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Insufficient Balance",
+                text = resolvedTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TrueLineDarkBg
             )
             Text(
-                text = "Add coins to connect with $listenerName",
+                text = resolvedSubtitle,
                 fontSize = 14.sp,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 4.dp)
