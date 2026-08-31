@@ -2,6 +2,7 @@ package com.example.truelineapp
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,8 +35,10 @@ fun IndividualChatScreen(
     partnerPhotoUrl: String = "",
     messagesList: List<ChatMessageData> = emptyList(),
     isLoading: Boolean = false,
+    userWalletBalance: Double = 0.0,
     onLoadMessages: () -> Unit = {},
     onSendMessage: (String) -> Unit = {},
+    onRechargeClick: () -> Unit = {},
     onCallClick: () -> Unit = {},
     onBack: () -> Unit
 ) {
@@ -106,6 +109,33 @@ fun IndividualChatScreen(
                     }
                 },
                 actions = {
+                    Surface(
+                        onClick = onRechargeClick,
+                        shape = RoundedCornerShape(20.dp),
+                        color = Color(0xFFF1F5F9),
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                        modifier = Modifier.padding(end = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CoinLogo(size = 15.dp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            val displayBal = if (userWalletBalance % 1.0 == 0.0) {
+                                "${userWalletBalance.toLong()}"
+                            } else {
+                                ((userWalletBalance * 10).toLong() / 10.0).toString()
+                            }
+                            Text(
+                                text = displayBal,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = TrueLineDarkBg
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onCallClick) {
                         Surface(
                             shape = CircleShape,
@@ -134,58 +164,95 @@ fun IndividualChatScreen(
                     .fillMaxWidth()
                     .imePadding()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .navigationBarsPadding()
-                        .padding(horizontal = 14.dp, vertical = 10.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                        .fillMaxWidth()
                 ) {
-                    TextField(
-                        value = textState,
-                        onValueChange = { textState = it },
-                        placeholder = { Text("Type a message...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
-                        textStyle = androidx.compose.ui.text.TextStyle(
-                            fontSize = 14.5.sp,
-                            color = TrueLineDarkBg,
-                            fontWeight = FontWeight.Medium
-                        ),
+                    // Cost / Balance Info Row
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .heightIn(min = 46.dp),
-                        colors = TextFieldDefaults.colors(
-                            focusedTextColor = TrueLineDarkBg,
-                            unfocusedTextColor = TrueLineDarkBg,
-                            focusedContainerColor = Color(0xFFF1F5F9),
-                            unfocusedContainerColor = Color(0xFFF1F5F9),
-                            disabledContainerColor = Color(0xFFF1F5F9),
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            cursorColor = TrueLinePrimary
-                        ),
-                        shape = RoundedCornerShape(24.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    IconButton(
-                        onClick = {
-                            if (textState.isNotBlank()) {
-                                onSendMessage(textState.trim())
-                                textState = ""
-                            }
-                        },
-                        modifier = Modifier.size(46.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = if (textState.isNotBlank()) TrueLineAccent else TrueLineAccent.copy(alpha = 0.35f)
-                        )
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp, start = 4.dp, end = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
-                            tint = TrueLineDarkBg,
-                            modifier = Modifier.size(20.dp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CoinLogo(size = 12.dp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "0.3 coins / message",
+                                fontSize = 11.5.sp,
+                                color = TrueLineTextSecondary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        if (userWalletBalance < 0.3) {
+                            Text(
+                                text = "Low Balance · Tap to Recharge",
+                                fontSize = 11.5.sp,
+                                color = Color(0xFFE53935),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable { onRechargeClick() }
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextField(
+                            value = textState,
+                            onValueChange = { textState = it },
+                            placeholder = { Text("Type a message (0.3 coins)...", color = Color(0xFFA0AEC0), fontSize = 14.sp) },
+                            textStyle = androidx.compose.ui.text.TextStyle(
+                                fontSize = 14.5.sp,
+                                color = TrueLineDarkBg,
+                                fontWeight = FontWeight.Medium
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 46.dp),
+                            colors = TextFieldDefaults.colors(
+                                focusedTextColor = TrueLineDarkBg,
+                                unfocusedTextColor = TrueLineDarkBg,
+                                focusedContainerColor = Color(0xFFF1F5F9),
+                                unfocusedContainerColor = Color(0xFFF1F5F9),
+                                disabledContainerColor = Color(0xFFF1F5F9),
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                cursorColor = TrueLinePrimary
+                            ),
+                            shape = RoundedCornerShape(24.dp)
                         )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        IconButton(
+                            onClick = {
+                                if (textState.isNotBlank()) {
+                                    if (userWalletBalance < 0.3) {
+                                        onRechargeClick()
+                                    } else {
+                                        onSendMessage(textState.trim())
+                                        textState = ""
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(46.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = if (textState.isNotBlank()) TrueLineAccent else TrueLineAccent.copy(alpha = 0.35f)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send",
+                                tint = TrueLineDarkBg,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }

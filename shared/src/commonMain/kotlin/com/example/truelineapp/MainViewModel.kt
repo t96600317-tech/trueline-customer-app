@@ -489,10 +489,25 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
     }
 
-    fun sendChatMessage(partnerId: String, content: String) {
+    fun sendChatMessage(
+        partnerId: String,
+        content: String,
+        onInsufficientBalance: () -> Unit = {}
+    ) {
         val trimmed = content.trim()
         if (trimmed.isBlank()) return
-        
+
+        val messageCost = 0.3
+        if (walletBalance < messageCost) {
+            onInsufficientBalance()
+            return
+        }
+
+        // Deduct 0.3 coin locally and persist
+        walletBalance = (walletBalance - messageCost).coerceAtLeast(0.0)
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        storage.saveWalletBalance(walletBalance)
+
         val tempId = "temp_${currentPlatformTimeMillis()}"
         val tempMsg = ChatMessageData(
             id = tempId,
@@ -512,6 +527,13 @@ class MainViewModel(private val scope: CoroutineScope) {
                     currentChatMessages[index] = res.data
                 }
                 fetchConversations()
+                fetchUserProfile()
+            } else {
+                if (res.error?.code == "INSUFFICIENT_BALANCE" || res.error?.message?.contains("balance", ignoreCase = true) == true) {
+                    currentChatMessages.removeAll { it.id == tempId }
+                    fetchUserProfile()
+                    onInsufficientBalance()
+                }
             }
         }
     }

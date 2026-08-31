@@ -261,6 +261,21 @@ fun App() {
                     val name = partner?.name ?: "Listener"
                     val title = partner?.title ?: ""
                     val photoUrl = partner?.photo_url ?: ""
+
+                    var showChatAddCoinsSheet by remember { mutableStateOf(false) }
+
+                    if (showChatAddCoinsSheet) {
+                        AddCoinsBottomSheet(
+                            listenerName = name,
+                            currentBalance = viewModel.walletBalance.toInt(),
+                            onDismiss = { showChatAddCoinsSheet = false },
+                            onAddCoins = { pkg ->
+                                viewModel.initiateRecharge(pkg.price * 100L, pkg.coins.toLong())
+                                showChatAddCoinsSheet = false
+                            }
+                        )
+                    }
+
                     IndividualChatScreen(
                         partnerId = id,
                         senderName = name,
@@ -268,8 +283,16 @@ fun App() {
                         partnerPhotoUrl = photoUrl,
                         messagesList = viewModel.currentChatMessages,
                         isLoading = viewModel.isChatMessagesLoading,
+                        userWalletBalance = viewModel.walletBalance,
                         onLoadMessages = { viewModel.openChatRoom(id) },
-                        onSendMessage = { content -> viewModel.sendChatMessage(id, content) },
+                        onSendMessage = { content -> 
+                            viewModel.sendChatMessage(
+                                partnerId = id, 
+                                content = content,
+                                onInsufficientBalance = { showChatAddCoinsSheet = true }
+                            ) 
+                        },
+                        onRechargeClick = { showChatAddCoinsSheet = true },
                         onCallClick = {
                             viewModel.connectToListener(id) { roomId, token, targetId, targetName, signedUserId, zegoConfigFingerprint ->
                                 com.example.truelineapp.call.getCallService().startAudioCall(
