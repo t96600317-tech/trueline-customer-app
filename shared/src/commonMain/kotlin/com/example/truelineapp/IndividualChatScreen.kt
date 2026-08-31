@@ -147,10 +147,10 @@ fun IndividualChatScreen(
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CoinLogo(size = 13.dp)
+                            CoinLogo(size = 14.dp)
                             Spacer(modifier = Modifier.width(4.dp))
                             val displayBal = if (userWalletBalance % 1.0 == 0.0) {
                                 "${userWalletBalance.toLong()}"
@@ -160,27 +160,8 @@ fun IndividualChatScreen(
                             Text(
                                 text = displayBal,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.5.sp,
+                                fontSize = 13.sp,
                                 color = TrueLineDarkBg
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(6.dp))
-
-                    // Call Button
-                    Surface(
-                        onClick = onCallClick,
-                        shape = CircleShape,
-                        color = TrueLineAccent,
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Filled.Call,
-                                contentDescription = "Call",
-                                tint = TrueLineDarkBg,
-                                modifier = Modifier.size(17.dp)
                             )
                         }
                     }
