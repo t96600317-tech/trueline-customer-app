@@ -35,7 +35,8 @@ fun UserProfileScreen(
     onUpdateName: (newName: String, cost: Int) -> Unit,
     onUpdatePhoto: (photoPath: String, cost: Int) -> Unit,
     onRemovePhoto: () -> Unit,
-    onLanguageClick: () -> Unit
+    onLanguageClick: () -> Unit,
+    onPrivacySecurityClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var showNameEdit by remember { mutableStateOf(false) }
@@ -256,7 +257,8 @@ fun UserProfileScreen(
                 SettingsItem(
                     icon = Icons.Default.Shield,
                     title = strings.privacyAndSecurity,
-                    colorTint = Color(0xFFE8F5E9)
+                    colorTint = Color(0xFFE8F5E9),
+                    onClick = onPrivacySecurityClick
                 )
                 SettingsItem(
                     icon = Icons.Default.Language,

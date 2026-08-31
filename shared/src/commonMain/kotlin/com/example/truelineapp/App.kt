@@ -149,6 +149,9 @@ fun App() {
                         onNavigateToWallet = {
                             navController.navigate("wallet")
                         },
+                        onNavigateToPrivacySecurity = {
+                            navController.navigate("privacy_security")
+                        },
                         onAddCoins = { _ ->
                             navController.navigate("wallet")
                         },
@@ -186,6 +189,11 @@ fun App() {
                                 }
                             }
                         }
+                    )
+                }
+                composable("privacy_security") {
+                    PrivacySecurityScreen(
+                        onBack = { navController.popBackStack() }
                     )
                 }
                 composable("wallet") {
@@ -325,6 +333,7 @@ fun MainScreen(
     isChatListLoading: Boolean,
     onChatClick: (ChatConversationData) -> Unit,
     onNavigateToWallet: () -> Unit,
+    onNavigateToPrivacySecurity: () -> Unit = {},
     onAddCoins: (Int) -> Unit,
     onUpdateName: (String, Int) -> Unit,
     onUpdatePhoto: (String, Int) -> Unit,
@@ -941,7 +950,8 @@ fun MainScreen(
                         onUpdateName = onUpdateName,
                         onUpdatePhoto = onUpdatePhoto,
                         onRemovePhoto = onRemovePhoto,
-                        onLanguageClick = { showLanguageSheet = true }
+                        onLanguageClick = { showLanguageSheet = true },
+                        onPrivacySecurityClick = onNavigateToPrivacySecurity
                     )
                 }
             }
