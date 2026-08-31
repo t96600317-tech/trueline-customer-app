@@ -16,6 +16,8 @@ import com.example.truelineapp.payment.PaymentServiceWrapper
 import com.example.truelineapp.otp.Msg91OtpResult
 import com.example.truelineapp.otp.getMsg91OtpGateway
 import com.example.truelineapp.call.callConnectionDiagnosticForDisplay
+import com.example.truelineapp.call.getCallService
+import com.example.truelineapp.call.playCallEndedTone
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -82,6 +84,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     var voiceCallErrorMessage by mutableStateOf<String?>(null)
     private var callEventsJob: Job? = null
     private var isEndingCall = false
+    private var completedCallSessionId: String? = null
 
     init {
         val storage = com.example.truelineapp.storage.getSessionStorage()
@@ -689,6 +692,8 @@ class MainViewModel(private val scope: CoroutineScope) {
                     errorMessage = "Unable to get a secure voice-call token"
                     return@launch
                 }
+                isEndingCall = false
+                completedCallSessionId = null
                 activeSessionId = res.data.session_id
                 startCallEventObserver(res.data.session_id)
                 onCallReady(
@@ -707,7 +712,8 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     fun onCallFinished(durationSeconds: Int) {
         val sid = activeSessionId ?: return
-        if (isEndingCall) return
+        if (isEndingCall || completedCallSessionId == sid) return
+        completedCallSessionId = sid
         isEndingCall = true
         callEventsJob?.cancel()
 
@@ -732,6 +738,7 @@ class MainViewModel(private val scope: CoroutineScope) {
         if (isEndingCall) return
         callEventsJob?.cancel()
         activeSessionId?.let { sid ->
+            completedCallSessionId = sid
             scope.launch {
                 repository.endCall(sid, "connection_failed")
                 fetchUserProfile()
@@ -775,13 +782,43 @@ class MainViewModel(private val scope: CoroutineScope) {
                     when (event.type) {
                         "balance_updated" -> fetchUserProfile()
                         "call_ended" -> {
-                            callEventsJob?.cancel()
+                            handleRemoteCallEnded(sessionId, event.reason)
                         }
                     }
                 }
             } catch (e: Exception) {
                 // Ignore call event stream exceptions
             }
+        }
+    }
+
+    private fun handleRemoteCallEnded(sessionId: String, reason: String?) {
+        if (activeSessionId != sessionId || isEndingCall || completedCallSessionId == sessionId) return
+        completedCallSessionId = sessionId
+        isEndingCall = true
+        callEventsJob?.cancel()
+        playCallEndedTone()
+        getCallService().endCall()
+
+        scope.launch {
+            val summary = repository.getCallSummary(sessionId)
+            if (summary.success && summary.data != null && summary.data.duration_seconds > 0) {
+                lastCallDuration = summary.data.duration_seconds
+                lastCallCoinsDeductedMicros = summary.data.coins_deducted_micros
+                showPostCallRating = true
+            } else {
+                activeSessionId = null
+                currentCallingPartner = null
+            }
+            val message = when (reason) {
+                "low_balance" -> "The call ended because your wallet balance is too low."
+                "listener_hangup", "listener_decline" -> "The listener ended the call."
+                else -> "The call was ended by the other participant."
+            }
+            errorMessage = message
+            voiceCallErrorMessage = message
+            fetchUserProfile()
+            isEndingCall = false
         }
     }
 }
