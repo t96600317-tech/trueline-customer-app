@@ -42,6 +42,7 @@ fun UserProfileScreen(
     var showNameEdit by remember { mutableStateOf(false) }
     var showPhotoConfirm by remember { mutableStateOf(false) }
     var showPhotoSourcePicker by remember { mutableStateOf(false) }
+    var showCustomerSupportSheet by remember { mutableStateOf(false) }
     var pendingPhotoPath by remember { mutableStateOf<String?>(null) }
     var isCameraPreview by remember { mutableStateOf(true) }
     var showPhotoPreview by remember { mutableStateOf(false) }
@@ -121,6 +122,13 @@ fun UserProfileScreen(
                 showPhotoSourcePicker = false
                 onRemovePhoto()
             }
+        )
+    }
+
+    if (showCustomerSupportSheet) {
+        CustomerSupportBottomSheet(
+            defaultName = userName,
+            onDismiss = { showCustomerSupportSheet = false }
         )
     }
 
@@ -275,7 +283,7 @@ fun UserProfileScreen(
                     title = strings.customerSupport,
                     subtitle = strings.helpCenter24x7,
                     colorTint = Color(0xFFFFF3E0),
-                    onClick = { /* TODO: Open support */ }
+                    onClick = { showCustomerSupportSheet = true }
                 )
             }
 
