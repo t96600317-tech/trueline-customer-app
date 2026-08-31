@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.truelineapp.network.chat.ChatMessageData
@@ -60,10 +61,13 @@ fun IndividualChatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(38.dp)
                                 .clip(CircleShape)
                                 .background(TrueLinePrimary.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
@@ -71,29 +75,44 @@ fun IndividualChatScreen(
                             Text(
                                 text = senderName.take(1).uppercase(),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
+                                fontSize = 17.sp,
                                 color = TrueLinePrimary
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(
+                            modifier = Modifier.weight(1f, fill = false),
+                            verticalArrangement = Arrangement.Center
+                        ) {
                             Text(
                                 text = senderName,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TrueLineDarkBg
+                                color = TrueLineDarkBg,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 1.dp)
+                            ) {
                                 Surface(
-                                    modifier = Modifier.size(7.dp),
+                                    modifier = Modifier.size(6.5.dp),
                                     shape = CircleShape,
                                     color = TrueLineOnline
                                 ) {}
-                                Spacer(modifier = Modifier.width(5.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = if (partnerTitle.isNotBlank()) partnerTitle else "Online",
+                                    text = if (partnerTitle.isNotBlank() && !partnerTitle.contains("•") && partnerTitle.length <= 15) {
+                                        "Online · $partnerTitle"
+                                    } else {
+                                        "Online"
+                                    },
                                     fontSize = 11.5.sp,
-                                    color = TrueLineTextSecondary
+                                    color = TrueLineOnline,
+                                    fontWeight = FontWeight.Medium,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
@@ -111,16 +130,16 @@ fun IndividualChatScreen(
                 actions = {
                     Surface(
                         onClick = onRechargeClick,
-                        shape = RoundedCornerShape(20.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = Color(0xFFF1F5F9),
                         border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier.padding(end = 6.dp)
+                        modifier = Modifier.padding(end = 4.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CoinLogo(size = 15.dp)
+                            CoinLogo(size = 14.dp)
                             Spacer(modifier = Modifier.width(4.dp))
                             val displayBal = if (userWalletBalance % 1.0 == 0.0) {
                                 "${userWalletBalance.toLong()}"
@@ -130,24 +149,27 @@ fun IndividualChatScreen(
                             Text(
                                 text = displayBal,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = 12.5.sp,
                                 color = TrueLineDarkBg
                             )
                         }
                     }
 
-                    IconButton(onClick = onCallClick) {
+                    IconButton(
+                        onClick = onCallClick,
+                        modifier = Modifier.size(38.dp)
+                    ) {
                         Surface(
                             shape = CircleShape,
                             color = TrueLineAccent,
-                            modifier = Modifier.size(38.dp)
+                            modifier = Modifier.size(34.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Filled.Call,
                                     contentDescription = "Call",
                                     tint = TrueLineDarkBg,
-                                    modifier = Modifier.size(19.dp)
+                                    modifier = Modifier.size(17.dp)
                                 )
                             }
                         }
