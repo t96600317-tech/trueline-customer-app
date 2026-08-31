@@ -22,9 +22,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 
 class MainViewModel(private val scope: CoroutineScope) {
     val repository = CustomerRepository()
+    private val jsonHelper = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+    }
 
     // --- Auth State ---
     var isLoading by mutableStateOf(false)
@@ -103,6 +110,16 @@ class MainViewModel(private val scope: CoroutineScope) {
             selectedLanguage = savedLang
         }
         isFirstTimeNameChange = !storage.isNameChangedBefore()
+
+        val savedConvsRaw = storage.getChatConversationsRaw()
+        if (!savedConvsRaw.isNullOrBlank()) {
+            try {
+                val savedConvs = jsonHelper.decodeFromString<List<ChatConversationData>>(savedConvsRaw)
+                conversations.clear()
+                conversations.addAll(savedConvs)
+            } catch (_: Exception) {}
+        }
+
         checkAutoLogin()
         fetchListeners()
 
@@ -469,6 +486,17 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     // --- Chat Methods ---
     fun fetchConversations() {
+        val storage = com.example.truelineapp.storage.getSessionStorage()
+        if (conversations.isEmpty()) {
+            val savedConvsRaw = storage.getChatConversationsRaw()
+            if (!savedConvsRaw.isNullOrBlank()) {
+                try {
+                    val savedConvs = jsonHelper.decodeFromString<List<ChatConversationData>>(savedConvsRaw)
+                    conversations.addAll(savedConvs)
+                } catch (_: Exception) {}
+            }
+        }
+
         isChatListLoading = conversations.isEmpty()
         scope.launch {
             val res = repository.getChatConversations()
@@ -483,16 +511,29 @@ class MainViewModel(private val scope: CoroutineScope) {
                         conversations.add(item)
                     }
                 }
+                try {
+                    storage.saveChatConversationsRaw(jsonHelper.encodeToString(conversations.toList()))
+                } catch (_: Exception) {}
             }
         }
     }
 
     fun openChatRoom(partnerId: String) {
         activeChatPartnerId = partnerId
+        val storage = com.example.truelineapp.storage.getSessionStorage()
         val cached = chatMessagesCache[partnerId]
         currentChatMessages.clear()
         if (!cached.isNullOrEmpty()) {
             currentChatMessages.addAll(cached)
+        } else {
+            val savedMsgsRaw = storage.getChatMessagesRaw(partnerId)
+            if (!savedMsgsRaw.isNullOrBlank()) {
+                try {
+                    val saved = jsonHelper.decodeFromString<List<ChatMessageData>>(savedMsgsRaw)
+                    currentChatMessages.addAll(saved)
+                    chatMessagesCache[partnerId] = saved.toMutableList()
+                } catch (_: Exception) {}
+            }
         }
         isChatMessagesLoading = currentChatMessages.isEmpty()
         scope.launch {
@@ -502,6 +543,9 @@ class MainViewModel(private val scope: CoroutineScope) {
                 currentChatMessages.clear()
                 currentChatMessages.addAll(res.data)
                 chatMessagesCache[partnerId] = res.data.toMutableList()
+                try {
+                    storage.saveChatMessagesRaw(partnerId, jsonHelper.encodeToString(res.data))
+                } catch (_: Exception) {}
             }
         }
     }
@@ -538,6 +582,10 @@ class MainViewModel(private val scope: CoroutineScope) {
         val cachedList = chatMessagesCache.getOrPut(partnerId) { mutableListOf() }
         cachedList.add(tempMsg)
 
+        try {
+            storage.saveChatMessagesRaw(partnerId, jsonHelper.encodeToString(cachedList.toList()))
+        } catch (_: Exception) {}
+
         // Optimistically update or insert the conversation in chat history list
         val partner = partners.find { it.id == partnerId } 
             ?: conversations.find { it.displayId == partnerId }?.let {
@@ -571,6 +619,10 @@ class MainViewModel(private val scope: CoroutineScope) {
         }
         conversations.add(0, updatedConv)
 
+        try {
+            storage.saveChatConversationsRaw(jsonHelper.encodeToString(conversations.toList()))
+        } catch (_: Exception) {}
+
         scope.launch {
             val res = repository.sendChatMessage(partnerId, trimmed)
             if (res.success && res.data != null) {
@@ -582,6 +634,9 @@ class MainViewModel(private val scope: CoroutineScope) {
                 if (cachedIndex != -1) {
                     cachedList[cachedIndex] = res.data
                 }
+                try {
+                    storage.saveChatMessagesRaw(partnerId, jsonHelper.encodeToString(cachedList.toList()))
+                } catch (_: Exception) {}
                 fetchConversations()
             }
         }

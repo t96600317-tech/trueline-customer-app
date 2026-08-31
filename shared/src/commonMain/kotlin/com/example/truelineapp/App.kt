@@ -144,7 +144,7 @@ fun App() {
                         playingAudioUrl = viewModel.playingAudioUrl,
                         onRefreshListeners = { viewModel.refreshListeners() },
                         onChatClick = { partner ->
-                            navController.navigate("chat_detail/${partner.partner_id}")
+                            navController.navigate("chat_detail/${partner.displayId}")
                         },
                         onNavigateToWallet = {
                             navController.navigate("wallet")
@@ -249,13 +249,13 @@ fun App() {
                 ) { backStackEntry ->
                     val id = backStackEntry.arguments?.read { getStringOrNull("id") } ?: ""
                     val partner = viewModel.partners.find { it.id == id }
-                        ?: viewModel.conversations.find { it.partner_id == id }?.let {
+                        ?: viewModel.conversations.find { it.displayId == id || it.partner_id == id }?.let {
                             ListenerDiscovery(
-                                id = it.partner_id,
-                                name = it.partner_name,
-                                title = it.partner_title,
-                                photo_url = it.partner_photo_url,
-                                availability = it.partner_availability
+                                id = it.displayId,
+                                name = it.displayName,
+                                title = it.displayTitle,
+                                photo_url = it.displayPhotoUrl,
+                                availability = it.displayAvailability
                             )
                         }
                     val name = partner?.name ?: "Listener"

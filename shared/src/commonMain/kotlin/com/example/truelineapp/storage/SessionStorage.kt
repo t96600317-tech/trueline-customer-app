@@ -15,6 +15,10 @@ interface SessionStorage {
     fun getWalletBalance(): Double?
     fun saveNameChangedBefore(changed: Boolean)
     fun isNameChangedBefore(): Boolean
+    fun saveChatConversationsRaw(json: String)
+    fun getChatConversationsRaw(): String?
+    fun saveChatMessagesRaw(partnerId: String, json: String)
+    fun getChatMessagesRaw(partnerId: String): String?
     fun clearSession()
 }
 

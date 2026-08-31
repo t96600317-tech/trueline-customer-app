@@ -64,6 +64,22 @@ class AndroidCustomerSessionStorage(private val context: Context) : SessionStora
         return prefs.getBoolean("name_changed_before", false)
     }
 
+    override fun saveChatConversationsRaw(json: String) {
+        prefs.edit().putString("saved_chat_conversations", json).commit()
+    }
+
+    override fun getChatConversationsRaw(): String? {
+        return prefs.getString("saved_chat_conversations", null)
+    }
+
+    override fun saveChatMessagesRaw(partnerId: String, json: String) {
+        prefs.edit().putString("saved_chat_msgs_$partnerId", json).commit()
+    }
+
+    override fun getChatMessagesRaw(partnerId: String): String? {
+        return prefs.getString("saved_chat_msgs_$partnerId", null)
+    }
+
     override fun clearSession() {
         prefs.edit().clear().commit()
     }
@@ -93,6 +109,10 @@ actual fun getSessionStorage(): SessionStorage {
         override fun getWalletBalance(): Double? = inMemory["user_wallet_balance"]?.toDoubleOrNull()
         override fun saveNameChangedBefore(changed: Boolean) { nameChanged = changed }
         override fun isNameChangedBefore(): Boolean = nameChanged
+        override fun saveChatConversationsRaw(json: String) { inMemory["saved_chat_conversations"] = json }
+        override fun getChatConversationsRaw(): String? = inMemory["saved_chat_conversations"]
+        override fun saveChatMessagesRaw(partnerId: String, json: String) { inMemory["saved_chat_msgs_$partnerId"] = json }
+        override fun getChatMessagesRaw(partnerId: String): String? = inMemory["saved_chat_msgs_$partnerId"]
         override fun clearSession() { inMemory.clear(); nameChanged = false }
     }
 }

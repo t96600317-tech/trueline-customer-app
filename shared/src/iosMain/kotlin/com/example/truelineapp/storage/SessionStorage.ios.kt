@@ -28,6 +28,12 @@ private object IOSCustomerSessionStorage : SessionStorage {
     override fun saveNameChangedBefore(changed: Boolean) = defaults.setBool(changed, forKey = NAME_CHANGED)
     override fun isNameChangedBefore(): Boolean = defaults.boolForKey(NAME_CHANGED)
 
+    override fun saveChatConversationsRaw(json: String) = defaults.setObject(json, forKey = CHAT_CONVERSATIONS)
+    override fun getChatConversationsRaw(): String? = defaults.stringForKey(CHAT_CONVERSATIONS)
+
+    override fun saveChatMessagesRaw(partnerId: String, json: String) = defaults.setObject(json, forKey = "chat_msgs_$partnerId")
+    override fun getChatMessagesRaw(partnerId: String): String? = defaults.stringForKey("chat_msgs_$partnerId")
+
     override fun clearSession() {
         customerSessionKeys.forEach(defaults::removeObjectForKey)
     }
@@ -42,6 +48,7 @@ private const val USER_NAME = "user_name"
 private const val USER_PHOTO = "user_photo"
 private const val WALLET_BALANCE = "user_wallet_balance"
 private const val NAME_CHANGED = "name_changed_before"
+private const val CHAT_CONVERSATIONS = "saved_chat_conversations"
 
 private val customerSessionKeys = listOf(
     AUTH_TOKEN,
@@ -50,5 +57,6 @@ private val customerSessionKeys = listOf(
     USER_NAME,
     USER_PHOTO,
     WALLET_BALANCE,
-    NAME_CHANGED
+    NAME_CHANGED,
+    CHAT_CONVERSATIONS
 )
