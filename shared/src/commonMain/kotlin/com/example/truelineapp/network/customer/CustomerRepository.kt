@@ -394,7 +394,7 @@ class CustomerRepository(
                 client.post("$baseUrl/chats/$partnerId/messages") {
                     header(HttpHeaders.Authorization, "Bearer $token")
                     contentType(ContentType.Application.Json)
-                    setBody(mapOf("content" to content))
+                    setBody(com.example.truelineapp.network.chat.SendMessageRequest(content))
                 }.body()
             }
         } catch (e: Exception) {

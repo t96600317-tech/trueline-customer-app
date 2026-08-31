@@ -55,3 +55,8 @@ data class ChatMessageData(
     val targetPartnerId: String
         get() = partner_id.ifBlank { listener_id }
 }
+
+@Serializable
+data class SendMessageRequest(
+    val content: String
+)
