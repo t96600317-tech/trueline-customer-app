@@ -59,87 +59,98 @@ fun IndividualChatScreen(
     Scaffold(
         containerColor = TrueLineLightBg,
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+            Surface(
+                shadowElevation = 2.dp,
+                color = Color.White,
+                modifier = Modifier.fillMaxWidth().statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .padding(horizontal = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Back Button
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.size(38.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(38.dp)
-                                .clip(CircleShape)
-                                .background(TrueLinePrimary.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = senderName.take(1).uppercase(),
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
-                                color = TrueLinePrimary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(
-                            modifier = Modifier.weight(1f, fill = false),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = senderName,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TrueLineDarkBg,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(top = 1.dp)
-                            ) {
-                                Surface(
-                                    modifier = Modifier.size(6.5.dp),
-                                    shape = CircleShape,
-                                    color = TrueLineOnline
-                                ) {}
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (partnerTitle.isNotBlank() && !partnerTitle.contains("•") && partnerTitle.length <= 15) {
-                                        "Online · $partnerTitle"
-                                    } else {
-                                        "Online"
-                                    },
-                                    fontSize = 11.5.sp,
-                                    color = TrueLineOnline,
-                                    fontWeight = FontWeight.Medium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = TrueLineDarkBg
+                            tint = TrueLineDarkBg,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
-                },
-                actions = {
+
+                    Spacer(modifier = Modifier.width(2.dp))
+
+                    // Avatar + Online Indicator badge
+                    Box(modifier = Modifier.size(42.dp)) {
+                        Surface(
+                            modifier = Modifier.size(40.dp),
+                            shape = CircleShape,
+                            color = TrueLinePrimary.copy(alpha = 0.12f)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = senderName.take(1).uppercase(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                    color = TrueLinePrimary
+                                )
+                            }
+                        }
+                        // Small green online dot anchored to bottom end of avatar
+                        Surface(
+                            modifier = Modifier
+                                .size(11.dp)
+                                .align(Alignment.BottomEnd),
+                            shape = CircleShape,
+                            color = TrueLineOnline,
+                            border = BorderStroke(1.5.dp, Color.White)
+                        ) {}
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Name & Subtitle
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = senderName,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TrueLineDarkBg,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = if (partnerTitle.isNotBlank()) partnerTitle else "Compassionate Listener",
+                            fontSize = 11.5.sp,
+                            color = TrueLineTextSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Coin Balance Pill
                     Surface(
                         onClick = onRechargeClick,
                         shape = RoundedCornerShape(16.dp),
                         color = Color(0xFFF1F5F9),
-                        border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
-                        modifier = Modifier.padding(end = 4.dp)
+                        border = BorderStroke(1.dp, Color(0xFFE2E8F0))
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CoinLogo(size = 14.dp)
+                            CoinLogo(size = 13.dp)
                             Spacer(modifier = Modifier.width(4.dp))
                             val displayBal = if (userWalletBalance % 1.0 == 0.0) {
                                 "${userWalletBalance.toLong()}"
@@ -155,28 +166,26 @@ fun IndividualChatScreen(
                         }
                     }
 
-                    IconButton(
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    // Call Button
+                    Surface(
                         onClick = onCallClick,
-                        modifier = Modifier.size(38.dp)
+                        shape = CircleShape,
+                        color = TrueLineAccent,
+                        modifier = Modifier.size(36.dp)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = TrueLineAccent,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Filled.Call,
-                                    contentDescription = "Call",
-                                    tint = TrueLineDarkBg,
-                                    modifier = Modifier.size(17.dp)
-                                )
-                            }
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Filled.Call,
+                                contentDescription = "Call",
+                                tint = TrueLineDarkBg,
+                                modifier = Modifier.size(17.dp)
+                            )
                         }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+                }
+            }
         },
         bottomBar = {
             Surface(
