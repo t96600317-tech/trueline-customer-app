@@ -527,13 +527,6 @@ class MainViewModel(private val scope: CoroutineScope) {
                     currentChatMessages[index] = res.data
                 }
                 fetchConversations()
-                fetchUserProfile()
-            } else {
-                if (res.error?.code == "INSUFFICIENT_BALANCE" || res.error?.message?.contains("balance", ignoreCase = true) == true) {
-                    currentChatMessages.removeAll { it.id == tempId }
-                    fetchUserProfile()
-                    onInsufficientBalance()
-                }
             }
         }
     }
