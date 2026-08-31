@@ -263,17 +263,17 @@ fun UserProfileScreen(
         ) {
             SettingsGroup(title = strings.accountSettings) {
                 SettingsItem(
-                    icon = Icons.Default.Shield,
-                    title = strings.privacyAndSecurity,
-                    colorTint = Color(0xFFE8F5E9),
-                    onClick = onPrivacySecurityClick
-                )
-                SettingsItem(
                     icon = Icons.Default.Language,
                     title = strings.languagePreference,
                     subtitle = displayLanguage,
                     colorTint = Color(0xFFE3F2FD),
                     onClick = onLanguageClick
+                )
+                SettingsItem(
+                    icon = Icons.Default.Shield,
+                    title = strings.privacyAndSecurity,
+                    colorTint = Color(0xFFE8F5E9),
+                    onClick = onPrivacySecurityClick
                 )
             }
 
