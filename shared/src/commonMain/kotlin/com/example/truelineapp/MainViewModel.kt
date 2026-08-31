@@ -66,6 +66,7 @@ class MainViewModel(private val scope: CoroutineScope) {
     var activeChatPartnerId by mutableStateOf<String?>(null)
     var currentChatMessages = mutableStateListOf<ChatMessageData>()
     var isChatMessagesLoading by mutableStateOf(false)
+    private val chatMessagesCache = mutableMapOf<String, MutableList<ChatMessageData>>()
 
     // --- Wallet & Cashfree Payment State ---
     var isPaymentProcessing by mutableStateOf(false)
@@ -465,26 +466,39 @@ class MainViewModel(private val scope: CoroutineScope) {
 
     // --- Chat Methods ---
     fun fetchConversations() {
-        isChatListLoading = true
+        isChatListLoading = conversations.isEmpty()
         scope.launch {
             val res = repository.getChatConversations()
             isChatListLoading = false
-            if (res.success && res.data != null) {
-                conversations.clear()
-                conversations.addAll(res.data)
+            if (res.success && res.data != null && res.data.isNotEmpty()) {
+                val serverItems = res.data
+                for (item in serverItems) {
+                    val idx = conversations.indexOfFirst { it.displayId == item.displayId }
+                    if (idx != -1) {
+                        conversations[idx] = item
+                    } else {
+                        conversations.add(item)
+                    }
+                }
             }
         }
     }
 
     fun openChatRoom(partnerId: String) {
         activeChatPartnerId = partnerId
-        isChatMessagesLoading = true
+        val cached = chatMessagesCache[partnerId]
         currentChatMessages.clear()
+        if (!cached.isNullOrEmpty()) {
+            currentChatMessages.addAll(cached)
+        }
+        isChatMessagesLoading = currentChatMessages.isEmpty()
         scope.launch {
             val res = repository.getChatMessages(partnerId)
             isChatMessagesLoading = false
-            if (res.success && res.data != null) {
+            if (res.success && res.data != null && res.data.isNotEmpty()) {
+                currentChatMessages.clear()
                 currentChatMessages.addAll(res.data)
+                chatMessagesCache[partnerId] = res.data.toMutableList()
             }
         }
     }
@@ -518,6 +532,41 @@ class MainViewModel(private val scope: CoroutineScope) {
             created_at = getCurrentTimeFormatted()
         )
         currentChatMessages.add(tempMsg)
+        val cachedList = chatMessagesCache.getOrPut(partnerId) { mutableListOf() }
+        cachedList.add(tempMsg)
+
+        // Optimistically update or insert the conversation in chat history list
+        val partner = partners.find { it.id == partnerId } 
+            ?: conversations.find { it.displayId == partnerId }?.let {
+                ListenerDiscovery(
+                    id = it.displayId,
+                    name = it.displayName,
+                    title = it.displayTitle,
+                    photo_url = it.displayPhotoUrl,
+                    availability = it.displayAvailability
+                )
+            }
+        val existingIndex = conversations.indexOfFirst { it.displayId == partnerId }
+        val updatedConv = if (existingIndex != -1) {
+            val existing = conversations.removeAt(existingIndex)
+            existing.copy(
+                last_message = trimmed,
+                last_message_sender = "user",
+                last_message_time = "Just now"
+            )
+        } else {
+            ChatConversationData(
+                partner_id = partnerId,
+                partner_name = partner?.name ?: "Listener",
+                partner_title = partner?.title ?: "Compassionate Listener",
+                partner_photo_url = partner?.photo_url ?: "",
+                partner_availability = partner?.availability ?: "online",
+                last_message = trimmed,
+                last_message_sender = "user",
+                last_message_time = "Just now"
+            )
+        }
+        conversations.add(0, updatedConv)
 
         scope.launch {
             val res = repository.sendChatMessage(partnerId, trimmed)
@@ -525,6 +574,10 @@ class MainViewModel(private val scope: CoroutineScope) {
                 val index = currentChatMessages.indexOfFirst { it.id == tempId }
                 if (index != -1) {
                     currentChatMessages[index] = res.data
+                }
+                val cachedIndex = cachedList.indexOfFirst { it.id == tempId }
+                if (cachedIndex != -1) {
+                    cachedList[cachedIndex] = res.data
                 }
                 fetchConversations()
             }
